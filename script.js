@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadInput = document.getElementById('loadInput');
     const brushSizeSlider = document.getElementById('brushSize');
     const brushSizeValue = document.getElementById('brushSizeValue');
+    const undoBtn = document.getElementById('undoBtn');
+    const redoBtn = document.getElementById('redoBtn');
 
     let isDrawing = false;
     let currentColor = '#000000';
@@ -18,10 +20,64 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastY = 0;
     let sprayInterval = null;
 
+    // Canvas state management
+    const MAX_HISTORY = 20;
+    let canvasHistory = [];
+    let historyIndex = -1;
+
+    // Save current canvas state
+    function saveCanvasState() {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // If we're not at the latest state, remove future states
+        if (historyIndex < canvasHistory.length - 1) {
+            canvasHistory = canvasHistory.slice(0, historyIndex + 1);
+        }
+
+        // Add new state
+        canvasHistory.push(imageData);
+        
+        // Limit history size
+        if (canvasHistory.length > MAX_HISTORY) {
+            canvasHistory.shift();
+        }
+
+        // Update history index
+        historyIndex = canvasHistory.length - 1;
+
+        // Update undo/redo button states
+        updateUndoRedoButtons();
+    }
+
+    // Update undo/redo button states
+    function updateUndoRedoButtons() {
+        undoBtn.disabled = historyIndex <= 0;
+        redoBtn.disabled = historyIndex >= canvasHistory.length - 1;
+    }
+
+    // Undo functionality
+    undoBtn.addEventListener('click', () => {
+        if (historyIndex > 0) {
+            historyIndex--;
+            ctx.putImageData(canvasHistory[historyIndex], 0, 0);
+            updateUndoRedoButtons();
+        }
+    });
+
+    // Redo functionality
+    redoBtn.addEventListener('click', () => {
+        if (historyIndex < canvasHistory.length - 1) {
+            historyIndex++;
+            ctx.putImageData(canvasHistory[historyIndex], 0, 0);
+            updateUndoRedoButtons();
+        }
+    });
+
     // Initialize canvas with white background
     function initCanvas() {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveCanvasState();
     }
 
     // Generate cute filename
@@ -99,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Clear canvas and draw loaded image
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                saveCanvasState();
             };
             img.src = event.target.result;
         };
@@ -140,6 +197,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function stopDrawing() {
+        if (isDrawing) {
+            saveCanvasState();
+        }
+        
+        isDrawing = false;
+        
+        // Stop spray paint interval
+        if (sprayInterval) {
+            clearInterval(sprayInterval);
+            sprayInterval = null;
+        }
+    }
+
     function sprayPaint(e) {
         ctx.fillStyle = currentColor;
         for (let i = 0; i < 50; i++) {
@@ -151,16 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.beginPath();
             ctx.arc(sprayX, sprayY, 1, 0, Math.PI * 2);
             ctx.fill();
-        }
-    }
-
-    function stopDrawing() {
-        isDrawing = false;
-        
-        // Stop spray paint interval
-        if (sprayInterval) {
-            clearInterval(sprayInterval);
-            sprayInterval = null;
         }
     }
 

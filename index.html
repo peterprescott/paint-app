@@ -11,20 +11,13 @@
         <h1>Paul's Paints</h1>
         <div class="app-wrapper">
             <div class="tools-container">
-                <div class="color-palette">
-                    <button class="color-btn" data-color="#000000"></button>
-                    <button class="color-btn" data-color="#FF0000"></button>
-                    <button class="color-btn" data-color="#0000FF"></button>
-                    <button class="color-btn" data-color="#00FF00"></button>
-                    <button class="color-btn" data-color="#FFFFFF"></button>
-                </div>
                 <div class="brush-styles">
                     <button class="brush-style-btn active" data-style="pencil">●</button>
                     <button class="brush-style-btn" data-style="spray">✦</button>
                 </div>
                 <div class="brush-size-container">
                     <label for="brushSize">Brush Size</label>
-                    <input type="range" id="brushSize" min="1" max="50" value="5">
+                    <input type="range" id="brushSize" min="1" max="12" value="5">
                     <span id="brushSizeValue">5</span>
                 </div>
             </div>
@@ -40,6 +33,13 @@
                     <button id="clearBtn">Clear</button>
                     <input type="file" id="loadInput" accept="image/*" style="display:none;">
                 </div>
+            </div>
+            <div class="color-palette">
+                <button class="color-btn" data-color="#000000"></button>
+                <button class="color-btn" data-color="#FF0000"></button>
+                <button class="color-btn" data-color="#0000FF"></button>
+                <button class="color-btn" data-color="#00FF00"></button>
+                <button class="color-btn" data-color="#FFFFFF"></button>
             </div>
         </div>
     </div>
