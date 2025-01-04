@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Brush size slider
     brushSizeSlider.addEventListener('input', () => {
-        brushSize = brushSizeSlider.value;
+        brushSize = Math.pow(brushSizeSlider.value, 2);
         brushSizeValue.textContent = brushSize;
     });
 
