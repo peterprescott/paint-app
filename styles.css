@@ -1,0 +1,60 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+}
+
+.container {
+    text-align: center;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    justify-content: center;
+}
+
+.color-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.color-btn {
+    width: 50px;
+    height: 50px;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+}
+
+.color-btn[data-color="#000000"] { background-color: #000000; }
+.color-btn[data-color="#FF0000"] { background-color: #FF0000; }
+.color-btn[data-color="#0000FF"] { background-color: #0000FF; }
+.color-btn[data-color="#00FF00"] { background-color: #00FF00; }
+
+.color-btn.active {
+    transform: scale(1.2);
+    border-color: black;
+    border-width: 4px;
+}
+
+#paintCanvas {
+    border: 2px solid #333;
+    background-color: white;
+    cursor: crosshair;
+}
