@@ -250,6 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
         isDrawing = true;
         [lastX, lastY] = [e.offsetX, e.offsetY];
 
+        // Fill entire canvas if fill style is selected
+        if (currentBrushStyle === 'fill') {
+            ctx.fillStyle = currentColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Save current state to history
+            saveCanvasState();
+            return;
+        }
+
         // Start spray paint if selected
         if (currentBrushStyle === 'spray') {
             sprayPaint(e);
