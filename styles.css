@@ -18,7 +18,7 @@ body {
 
 .app-wrapper {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 20px;
     justify-content: center;
 }
@@ -26,12 +26,21 @@ body {
 .tools-container {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 20px;
 }
 
 .color-palette {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.brush-size-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
 }
 
@@ -47,6 +56,10 @@ body {
     flex-direction: column;
     gap: 10px;
     justify-content: flex-start;
+}
+
+#brushSize {
+    width: 100px;
 }
 
 .color-btn {
@@ -109,4 +122,5 @@ body {
 #clearBtn {
     background-color: #f44336;
     color: white;
+    margin-top: 20px;
 }

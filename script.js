@@ -6,9 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('saveBtn');
     const loadBtn = document.getElementById('loadBtn');
     const loadInput = document.getElementById('loadInput');
+    const brushSizeSlider = document.getElementById('brushSize');
+    const brushSizeValue = document.getElementById('brushSizeValue');
 
     let isDrawing = false;
     let currentColor = '#000000';
+    let brushSize = 5;
     let lastX = 0;
     let lastY = 0;
 
@@ -43,6 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set current color
             currentColor = button.dataset.color;
         });
+    });
+
+    // Brush size slider
+    brushSizeSlider.addEventListener('input', () => {
+        brushSize = brushSizeSlider.value;
+        brushSizeValue.textContent = brushSize;
     });
 
     // Clear canvas functionality
@@ -95,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.moveTo(lastX, lastY);
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.strokeStyle = currentColor;
-        ctx.lineWidth = 5;
+        ctx.lineWidth = brushSize;
         ctx.lineCap = 'round';
         ctx.stroke();
 
