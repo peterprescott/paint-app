@@ -1,7 +1,36 @@
 class RogueLikeGame {
-    constructor() {
-        this.canvas = document.getElementById('game-canvas');
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
+        
+        // Single Samurai avatar
+        this.avatar = {
+            name: 'Samurai',
+            draw: (ctx, x, y, w, h) => {
+                const armorColor = '#4A2C1D';
+                const skinTone = '#E6C229';
+                const helmetColor = '#808080';
+                const outlineColor = '#000000';
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = outlineColor;
+
+                const drawPixelRect = (fillColor, fx, fy, fw, fh) => {
+                    ctx.fillStyle = fillColor;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    ctx.strokeRect(fx, fy, fw, fh);
+                };
+
+                drawPixelRect(armorColor, x + 10, y + 10, w - 20, h - 20);
+                drawPixelRect(helmetColor, x + 8, y, w - 16, 10);
+                drawPixelRect(skinTone, x + 12, y + 10, w - 24, 10);
+                
+                ctx.fillStyle = outlineColor;
+                ctx.fillRect(x + 12, y + 4, 4, 2);
+                ctx.fillRect(x + w - 16, y + 4, 4, 2);
+            }
+        };
+        
         this.player = null;
         this.enemies = [];
         this.walls = [];
@@ -28,6 +57,47 @@ class RogueLikeGame {
         this.setupLevelSelect();
         
         this.setupEventListeners();
+    }
+    
+    setupLevelSelect() {
+        const levelSelect = document.getElementById('level-select');
+        
+        // Add options for each level
+        this.levelDesigns.forEach(level => {
+            const option = document.createElement('option');
+            option.value = level.number;
+            option.textContent = `Level ${level.number}: ${level.name}`;
+            levelSelect.appendChild(option);
+        });
+
+        // Add event listener to update description
+        levelSelect.addEventListener('change', (event) => {
+            const selectedLevel = event.target.value;
+            const levelNameEl = document.getElementById('current-level-name');
+            const levelDescEl = document.getElementById('current-level-description');
+
+            if (selectedLevel === 'random') {
+                levelNameEl.textContent = 'Random Level';
+                levelDescEl.textContent = 'A randomly selected level layout will be generated.';
+            } else {
+                const level = this.levelDesigns.find(l => l.number === parseInt(selectedLevel));
+                if (level) {
+                    levelNameEl.textContent = `Level ${level.number}: ${level.name}`;
+                    levelDescEl.textContent = level.description;
+                }
+            }
+        });
+    }
+
+    drawPlayer() {
+        // Use the Samurai avatar's draw method
+        this.avatar.draw(
+            this.ctx, 
+            this.player.x, 
+            this.player.y, 
+            this.player.width, 
+            this.player.height
+        );
     }
     
     generateLevelDesigns() {
@@ -220,81 +290,6 @@ class RogueLikeGame {
         return levels;
     }
 
-    setupLevelSelect() {
-        const levelSelect = document.getElementById('level-select');
-        
-        // Add options for each level
-        this.levelDesigns.forEach(level => {
-            const option = document.createElement('option');
-            option.value = level.number;
-            option.textContent = `Level ${level.number}: ${level.name}`;
-            levelSelect.appendChild(option);
-        });
-
-        // Add event listener to update description
-        levelSelect.addEventListener('change', (event) => {
-            const selectedLevel = event.target.value;
-            const levelNameEl = document.getElementById('current-level-name');
-            const levelDescEl = document.getElementById('current-level-description');
-
-            if (selectedLevel === 'random') {
-                levelNameEl.textContent = 'Random Level';
-                levelDescEl.textContent = 'A randomly selected level layout will be generated.';
-            } else {
-                const level = this.levelDesigns.find(l => l.number === parseInt(selectedLevel));
-                if (level) {
-                    levelNameEl.textContent = `Level ${level.number}: ${level.name}`;
-                    levelDescEl.textContent = level.description;
-                }
-            }
-        });
-    }
-
-    generateWalls() {
-        const wallThickness = 20;
-        const canvasWidth = this.canvas.width;
-        const canvasHeight = this.canvas.height;
-        
-        // Reset walls
-        this.walls = [];
-        
-        // Get selected level from dropdown
-        const levelSelect = document.getElementById('level-select');
-        const selectedLevel = levelSelect.value;
-        
-        let levelDesign;
-        if (selectedLevel === 'random') {
-            // Random level selection
-            levelDesign = this.levelDesigns[Math.floor(Math.random() * this.levelDesigns.length)];
-            
-            // Update level description for random selection
-            const levelNameEl = document.getElementById('current-level-name');
-            const levelDescEl = document.getElementById('current-level-description');
-            levelNameEl.textContent = `Level ${levelDesign.number}: ${levelDesign.name}`;
-            levelDescEl.textContent = levelDesign.description;
-        } else {
-            // Specific level selection
-            levelDesign = this.levelDesigns.find(level => level.number === parseInt(selectedLevel));
-        }
-        
-        // Add outer walls if specified in the design
-        if (levelDesign.outerWalls) {
-            this.walls.push(
-                // Top wall
-                {x: 0, y: 0, width: canvasWidth, height: wallThickness},
-                // Bottom wall
-                {x: 0, y: canvasHeight - wallThickness, width: canvasWidth, height: wallThickness},
-                // Left wall
-                {x: 0, y: 0, width: wallThickness, height: canvasHeight},
-                // Right wall
-                {x: canvasWidth - wallThickness, y: 0, width: wallThickness, height: canvasHeight}
-            );
-        }
-        
-        // Add walls from the selected level design
-        this.walls.push(...levelDesign.walls);
-    }
-    
     setupEventListeners() {
         this.startButton.addEventListener('click', () => this.toggleGame());
         this.restartButton.addEventListener('click', () => this.restartGame());
@@ -556,6 +551,51 @@ class RogueLikeGame {
         );
     }
     
+    generateWalls() {
+        const wallThickness = 20;
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        
+        // Reset walls
+        this.walls = [];
+        
+        // Get selected level from dropdown
+        const levelSelect = document.getElementById('level-select');
+        const selectedLevel = levelSelect.value;
+        
+        let levelDesign;
+        if (selectedLevel === 'random') {
+            // Random level selection
+            levelDesign = this.levelDesigns[Math.floor(Math.random() * this.levelDesigns.length)];
+            
+            // Update level description for random selection
+            const levelNameEl = document.getElementById('current-level-name');
+            const levelDescEl = document.getElementById('current-level-description');
+            levelNameEl.textContent = `Level ${levelDesign.number}: ${levelDesign.name}`;
+            levelDescEl.textContent = levelDesign.description;
+        } else {
+            // Specific level selection
+            levelDesign = this.levelDesigns.find(level => level.number === parseInt(selectedLevel));
+        }
+        
+        // Add outer walls if specified in the design
+        if (levelDesign.outerWalls) {
+            this.walls.push(
+                // Top wall
+                {x: 0, y: 0, width: canvasWidth, height: wallThickness},
+                // Bottom wall
+                {x: 0, y: canvasHeight - wallThickness, width: canvasWidth, height: wallThickness},
+                // Left wall
+                {x: 0, y: 0, width: wallThickness, height: canvasHeight},
+                // Right wall
+                {x: canvasWidth - wallThickness, y: 0, width: wallThickness, height: canvasHeight}
+            );
+        }
+        
+        // Add walls from the selected level design
+        this.walls.push(...levelDesign.walls);
+    }
+    
     updateEnemies() {
         const currentTime = Date.now();
         const deltaTime = currentTime - this.lastUpdateTime;
@@ -700,8 +740,7 @@ class RogueLikeGame {
         });
         
         // Draw player
-        this.ctx.fillStyle = 'green';
-        this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
+        this.drawPlayer();
         
         // Draw enemies
         this.ctx.fillStyle = 'black';
@@ -722,5 +761,11 @@ class RogueLikeGame {
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    const game = new RogueLikeGame();
+    // Ensure the canvas exists before initializing
+    const gameCanvas = document.getElementById('gameCanvas');
+    if (gameCanvas) {
+        const game = new RogueLikeGame('gameCanvas');
+    } else {
+        console.error('Game canvas not found. Check your HTML.');
+    }
 });

@@ -10,11 +10,12 @@ body {
 }
 
 #game-container {
-    text-align: center;
-    background-color: #16213e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #0f3460;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #game-stats {
@@ -114,4 +115,16 @@ button:hover {
 
 #restart-game:hover {
     background-color: #16213e;
+}
+
+#game-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #0f3460;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
 }
