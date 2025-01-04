@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = canvas.getContext('2d');
     const colorButtons = document.querySelectorAll('.color-btn');
     const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const loadBtn = document.getElementById('loadBtn');
+    const loadInput = document.getElementById('loadInput');
 
     let isDrawing = false;
     let currentColor = '#000000';
@@ -13,6 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function initCanvas() {
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Generate cute filename
+    function generateCuteFileName() {
+        const adjectives = ['funny', 'silly', 'happy', 'crazy', 'super', 'magic', 'wild'];
+        const colors = ['red', 'blue', 'green', 'yellow', 'purple', 'pink'];
+        const nouns = ['clown', 'unicorn', 'dragon', 'robot', 'monster', 'rocket', 'pirate'];
+
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+
+        return `${randomAdjective}-${randomColor}-${randomNoun}.jpg`;
     }
 
     // Color selection
@@ -32,6 +48,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear canvas functionality
     clearBtn.addEventListener('click', () => {
         initCanvas();
+    });
+
+    // Save canvas functionality
+    saveBtn.addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = generateCuteFileName();
+        link.href = canvas.toDataURL('image/jpeg');
+        link.click();
+    });
+
+    // Load canvas functionality
+    loadBtn.addEventListener('click', () => {
+        loadInput.click();
+    });
+
+    loadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                // Clear canvas and draw loaded image
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = event.target.result;
+        };
+
+        reader.readAsDataURL(file);
+        // Reset the input to allow loading the same file again
+        loadInput.value = '';
     });
 
     // Drawing functions

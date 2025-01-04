@@ -35,10 +35,18 @@ body {
     gap: 10px;
 }
 
+.canvas-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
 .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    justify-content: flex-start;
 }
 
 .color-btn {
@@ -75,18 +83,30 @@ body {
     cursor: crosshair;
 }
 
-#eraserBtn, #clearBtn {
+#clearBtn, #saveBtn, #loadBtn {
     padding: 10px;
     background-color: #f0f0f0;
     border: 1px solid #333;
     cursor: pointer;
     transition: background-color 0.2s;
+    width: 100px;
 }
 
-#eraserBtn:hover, #clearBtn:hover {
+#clearBtn:hover, #saveBtn:hover, #loadBtn:hover {
     background-color: #e0e0e0;
 }
 
-#eraserBtn.active {
-    background-color: #d0d0d0;
+#saveBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#loadBtn {
+    background-color: #2196F3;
+    color: white;
+}
+
+#clearBtn {
+    background-color: #f44336;
+    color: white;
 }
