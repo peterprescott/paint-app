@@ -101,67 +101,73 @@ class RogueLikeGame {
     
     generateWalls() {
         const wallThickness = 20;
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
         
-        // Top wall
-        this.walls.push({
-            x: 0,
-            y: 0,
-            width: this.canvas.width,
-            height: wallThickness
-        });
+        // Outer walls (unchanged)
+        this.walls.push(
+            // Top wall
+            {x: 0, y: 0, width: canvasWidth, height: wallThickness},
+            // Bottom wall
+            {x: 0, y: canvasHeight - wallThickness, width: canvasWidth, height: wallThickness},
+            // Left wall
+            {x: 0, y: 0, width: wallThickness, height: canvasHeight},
+            // Right wall
+            {x: canvasWidth - wallThickness, y: 0, width: wallThickness, height: canvasHeight}
+        );
         
-        // Bottom wall
-        this.walls.push({
-            x: 0,
-            y: this.canvas.height - wallThickness,
-            width: this.canvas.width,
-            height: wallThickness
-        });
+        // Labyrinth-style internal walls
+        const wallSegments = [
+            // Horizontal walls
+            {x: canvasWidth * 0.2, y: canvasHeight * 0.3, width: canvasWidth * 0.6, height: wallThickness},
+            {x: canvasWidth * 0.1, y: canvasHeight * 0.6, width: canvasWidth * 0.4, height: wallThickness},
+            {x: canvasWidth * 0.5, y: canvasHeight * 0.8, width: canvasWidth * 0.4, height: wallThickness},
+            
+            // Vertical walls
+            {x: canvasWidth * 0.4, y: 0, width: wallThickness, height: canvasHeight * 0.4},
+            {x: canvasWidth * 0.7, y: canvasHeight * 0.4, width: wallThickness, height: canvasHeight * 0.4},
+            {x: canvasWidth * 0.2, y: canvasHeight * 0.6, width: wallThickness, height: canvasHeight * 0.3}
+        ];
         
-        // Left wall
-        this.walls.push({
-            x: 0,
-            y: 0,
-            width: wallThickness,
-            height: this.canvas.height
-        });
+        // Add wall segments
+        this.walls.push(...wallSegments);
         
-        // Right wall
-        this.walls.push({
-            x: this.canvas.width - wallThickness,
-            y: 0,
-            width: wallThickness,
-            height: this.canvas.height
-        });
+        // Optional: Add some diagonal or angled walls for more complexity
+        const angledWalls = [
+            {x: canvasWidth * 0.3, y: canvasHeight * 0.5, width: 150, height: wallThickness, rotation: 45},
+            {x: canvasWidth * 0.6, y: canvasHeight * 0.2, width: 150, height: wallThickness, rotation: -45}
+        ];
         
-        // Add some internal walls
-        const internalWallCount = 3;
-        for (let i = 0; i < internalWallCount; i++) {
-            this.walls.push({
-                x: Math.random() * (this.canvas.width - 100) + 50,
-                y: Math.random() * (this.canvas.height - 100) + 50,
-                width: Math.random() > 0.5 ? 20 : 100,
-                height: Math.random() > 0.5 ? 100 : 20
-            });
-        }
+        // Add angled walls if you want extra complexity
+        // Note: Rotation would require more complex drawing logic
+        // this.walls.push(...angledWalls);
     }
     
     generateEnemies() {
+        // Modify enemy generation to avoid walls
         for (let i = 0; i < 5; i++) {
             let enemy;
+            let attempts = 0;
             do {
                 enemy = {
                     x: Math.random() * this.canvas.width,
                     y: Math.random() * this.canvas.height,
                     width: 20,
                     height: 20,
-                    baseSpeed: 1, // Base speed
-                    speed: 1, // Current speed (can vary)
-                    speedVariation: Math.random() * 0.5 + 0.5, // 0.5 to 1
-                    directionJitter: {x: 0, y: 0}, // Random movement offset
+                    baseSpeed: 1,
+                    speed: 1,
+                    speedVariation: Math.random() * 0.5 + 0.5,
+                    directionJitter: {x: 0, y: 0},
                     jitterTimer: 0,
-                    jitterInterval: Math.random() * 1000 + 500 // Randomize jitter timing
+                    jitterInterval: Math.random() * 1000 + 500
                 };
+                attempts++;
+                
+                // Prevent infinite loop
+                if (attempts > 100) {
+                    console.warn('Could not place enemy without wall collision');
+                    break;
+                }
             } while (this.checkCollisionWithWalls(enemy));
             
             this.enemies.push(enemy);
@@ -343,7 +349,17 @@ class RogueLikeGame {
         // Draw walls
         this.ctx.fillStyle = 'gray';
         this.walls.forEach(wall => {
-            this.ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            // Check if wall has rotation (for future potential)
+            if (wall.rotation !== undefined) {
+                this.ctx.save();
+                this.ctx.translate(wall.x + wall.width / 2, wall.y + wall.height / 2);
+                this.ctx.rotate(wall.rotation * Math.PI / 180);
+                this.ctx.fillRect(-wall.width / 2, -wall.height / 2, wall.width, wall.height);
+                this.ctx.restore();
+            } else {
+                // Standard rectangular wall
+                this.ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            }
         });
         
         // Draw player
