@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
     const colorButtons = document.querySelectorAll('.color-btn');
+    const brushStyleButtons = document.querySelectorAll('.brush-style-btn');
     const clearBtn = document.getElementById('clearBtn');
     const saveBtn = document.getElementById('saveBtn');
     const loadBtn = document.getElementById('loadBtn');
@@ -11,9 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isDrawing = false;
     let currentColor = '#000000';
+    let currentBrushStyle = 'pencil';
     let brushSize = 5;
     let lastX = 0;
     let lastY = 0;
+    let sprayInterval = null;
 
     // Initialize canvas with white background
     function initCanvas() {
@@ -45,6 +48,20 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Set current color
             currentColor = button.dataset.color;
+        });
+    });
+
+    // Brush style selection
+    brushStyleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            brushStyleButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to selected button
+            button.classList.add('active');
+            
+            // Set current brush style
+            currentBrushStyle = button.dataset.style;
         });
     });
 
@@ -95,24 +112,56 @@ document.addEventListener('DOMContentLoaded', () => {
     function startDrawing(e) {
         isDrawing = true;
         [lastX, lastY] = [e.offsetX, e.offsetY];
+
+        // Start spray paint if selected
+        if (currentBrushStyle === 'spray') {
+            sprayPaint(e);
+            sprayInterval = setInterval(() => sprayPaint({offsetX: lastX, offsetY: lastY}), 50);
+        }
     }
 
     function draw(e) {
         if (!isDrawing) return;
 
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(e.offsetX, e.offsetY);
-        ctx.strokeStyle = currentColor;
-        ctx.lineWidth = brushSize;
-        ctx.lineCap = 'round';
-        ctx.stroke();
+        if (currentBrushStyle === 'pencil') {
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineCap = 'round';
+            ctx.stroke();
 
-        [lastX, lastY] = [e.offsetX, e.offsetY];
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        } else if (currentBrushStyle === 'spray') {
+            // Update spray paint location
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+            sprayPaint(e);
+        }
+    }
+
+    function sprayPaint(e) {
+        ctx.fillStyle = currentColor;
+        for (let i = 0; i < 50; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * (brushSize * 2);
+            const sprayX = e.offsetX + radius * Math.cos(angle);
+            const sprayY = e.offsetY + radius * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.arc(sprayX, sprayY, 1, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 
     function stopDrawing() {
         isDrawing = false;
+        
+        // Stop spray paint interval
+        if (sprayInterval) {
+            clearInterval(sprayInterval);
+            sprayInterval = null;
+        }
     }
 
     // Event listeners for drawing
@@ -121,8 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseout', stopDrawing);
 
-    // Set initial color (black)
+    // Set initial color and brush style
     colorButtons[0].classList.add('active');
+    brushStyleButtons[0].classList.add('active');
 
     // Initialize canvas
     initCanvas();
