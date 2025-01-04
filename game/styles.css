@@ -1,78 +1,77 @@
 body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     margin: 0;
-    background-color: #1a1a2e;
-    color: #e0e0e0;
+    font-family: 'Arial', sans-serif;
+    background-color: #0f3460;
+    color: #e2e2e2;
 }
 
 #game-container {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    background-color: #0f3460;
-    padding: 20px;
+    min-height: 100vh;
+    padding: 50px;
+    box-sizing: border-box;
+}
+
+#game-content {
+    display: flex;
+    gap: 50px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+#game-controls {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background-color: #16213e;
+    padding: 30px;
     border-radius: 10px;
 }
 
+#game-canvas-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameCanvas {
+    border: 4px solid #16213e;
+    border-radius: 10px;
+    max-width: 100%;
+}
+
+.level-selection, 
+.game-buttons, 
+.controls-hint, 
 #game-stats {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
+    flex-direction: column;
+    gap: 10px;
 }
 
-#game-canvas {
-    border: 2px solid #0f3460;
+.game-buttons button,
+#level-select {
     background-color: #0f3460;
-}
-
-button {
-    background-color: #e94560;
-    color: white;
+    color: #e2e2e2;
     border: none;
-    padding: 10px 20px;
-    margin: 10px;
+    padding: 10px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #f73859;
-}
-
-.controls-hint {
-    color: #e0e0e0;
-    font-size: 0.9em;
-    margin-top: 10px;
-}
-
-.level-selection {
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.level-selection label {
-    margin-right: 10px;
-    color: #e0e0e0;
-}
-
-.level-selection select {
-    background-color: #0f3460;
-    color: #e0e0e0;
-    border: 1px solid #e94560;
-    padding: 5px;
-    border-radius: 3px;
+.game-buttons button:hover,
+#level-select:hover {
+    background-color: #1a4b8d;
 }
 
 #level-description {
     text-align: center;
-    color: #e0e0e0;
+    color: #e2e2e2;
     margin: 10px 0;
     padding: 10px;
     background-color: #16213e;
@@ -88,43 +87,10 @@ button:hover {
     font-size: 0.9em;
 }
 
-.game-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.game-buttons button {
-    background-color: #e94560;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.game-buttons button:hover {
-    background-color: #f73859;
-}
-
 #restart-game {
-    background-color: #0f3460;
-}
-
-#restart-game:hover {
     background-color: #16213e;
 }
 
-#game-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #0f3460;
-    padding: 20px;
-    border-radius: 10px;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
+#restart-game:hover {
+    background-color: #1a4b8d;
 }

@@ -8,31 +8,37 @@
 </head>
 <body>
     <div id="game-container">
-        <div id="game-stats">
-            <div id="health">Health: <span id="health-value">100</span></div>
-            <div id="level">Level: <span id="level-value">1</span></div>
-            <div id="score">Score: <span id="score-value">0</span></div>
-        </div>
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div id="game-controls">
-            <div class="level-selection">
-                <label for="level-select">Select Level:</label>
-                <select id="level-select">
-                    <option value="random">Random Level</option>
-                    <!-- Levels will be dynamically populated by JavaScript -->
-                </select>
+        <div id="game-content">
+            <div id="game-controls">
+                <div class="level-selection">
+                    <label for="level-select">Select Level:</label>
+                    <select id="level-select">
+                        <option value="random">Random Level</option>
+                        <!-- Levels will be dynamically populated by JavaScript -->
+                    </select>
+                </div>
+                <div id="level-description">
+                    <p id="current-level-name">Select a Level</p>
+                    <p id="current-level-description">Choose a level to see its description</p>
+                </div>
+                <div class="game-buttons">
+                    <button id="start-game">Start Game</button>
+                    <button id="restart-game">Restart Game</button>
+                </div>
+                <div class="controls-hint">
+                    <h3>Controls:</h3>
+                    <p>Move: h (left), j (down), k (up), l (right)</p>
+                    <p>Space: Start/Pause Game</p>
+                    <p>R: Restart Game</p>
+                </div>
+                <div id="game-stats">
+                    <div id="health">Health: <span id="health-value">100</span></div>
+                    <div id="level">Level: <span id="level-value">1</span></div>
+                    <div id="score">Score: <span id="score-value">0</span></div>
+                </div>
             </div>
-            <div id="level-description">
-                <p id="current-level-name">Select a Level</p>
-                <p id="current-level-description">Choose a level to see its description</p>
-            </div>
-            <div class="game-buttons">
-                <button id="start-game">Start Game</button>
-                <button id="restart-game">Restart Game</button>
-            </div>
-            <div class="controls-hint">
-                <p>Move: h (left), j (down), k (up), l (right)</p>
-                <p>Space: Start/Pause Game, R: Restart Game</p>
+            <div id="game-canvas-container">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
             </div>
         </div>
     </div>
