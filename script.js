@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const brushSizeValue = document.getElementById('brushSizeValue');
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
+    const colorPickerOverlay = document.getElementById('colorPickerOverlay');
+    const customColorPicker = document.getElementById('customColorPicker');
+    const colorPickerBtn = document.querySelector('.color-picker-btn');
+    const confirmColorBtn = document.getElementById('confirmColorBtn');
+    const cancelColorBtn = document.getElementById('cancelColorBtn');
 
     let isDrawing = false;
     let currentColor = '#000000';
@@ -163,6 +168,81 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
         // Reset the input to allow loading the same file again
         loadInput.value = '';
+    });
+
+    // Color picker functionality
+    colorPickerBtn.addEventListener('click', () => {
+        // Set initial color to current color
+        customColorPicker.value = currentColor;
+        colorPickerOverlay.style.display = 'flex';
+    });
+
+    // Helper function to convert RGB to Hex
+    function rgbToHex(rgb) {
+        // Remove 'rgb()' and split into components
+        const matches = rgb.match(/\d+/g);
+        
+        // If no matches or not enough components, return black
+        if (!matches || matches.length < 3) {
+            return '#000000';
+        }
+        
+        // Convert to hex
+        const r = parseInt(matches[0]).toString(16).padStart(2, '0');
+        const g = parseInt(matches[1]).toString(16).padStart(2, '0');
+        const b = parseInt(matches[2]).toString(16).padStart(2, '0');
+        
+        return `#${r}${g}${b}`;
+    }
+
+    confirmColorBtn.addEventListener('click', () => {
+        const selectedColor = customColorPicker.value;
+
+        // Remove active class from all color buttons
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Add active class to color picker button
+        colorPickerBtn.classList.add('active');
+        
+        // Set current color
+        currentColor = selectedColor;
+        
+        // Update color picker button background
+        colorPickerBtn.style.backgroundColor = selectedColor;
+        
+        // Hide overlay
+        colorPickerOverlay.style.display = 'none';
+    });
+
+    cancelColorBtn.addEventListener('click', () => {
+        colorPickerOverlay.style.display = 'none';
+    });
+
+    // Close overlay if clicked outside modal
+    colorPickerOverlay.addEventListener('click', (e) => {
+        if (e.target === colorPickerOverlay) {
+            // Automatically select the current color in the picker
+            const selectedColor = customColorPicker.value;
+
+            // Remove active class from all color buttons
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to color picker button
+            colorPickerBtn.classList.add('active');
+            
+            // Set current color
+            currentColor = selectedColor;
+            
+            // Update color picker button background
+            colorPickerBtn.style.backgroundColor = selectedColor;
+            
+            // Hide overlay
+            colorPickerOverlay.style.display = 'none';
+        }
     });
 
     // Drawing functions
