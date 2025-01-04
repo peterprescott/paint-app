@@ -15,11 +15,24 @@
         </div>
         <canvas id="game-canvas" width="800" height="600"></canvas>
         <div id="game-controls">
-            <button id="start-game">Start Game</button>
-            <button id="restart-game" style="display:none;">Restart</button>
+            <div class="level-selection">
+                <label for="level-select">Select Level:</label>
+                <select id="level-select">
+                    <option value="random">Random Level</option>
+                    <!-- Levels will be dynamically populated by JavaScript -->
+                </select>
+            </div>
+            <div id="level-description">
+                <p id="current-level-name">Select a Level</p>
+                <p id="current-level-description">Choose a level to see its description</p>
+            </div>
+            <div class="game-buttons">
+                <button id="start-game">Start Game</button>
+                <button id="restart-game">Restart Game</button>
+            </div>
             <div class="controls-hint">
                 <p>Move: h (left), j (down), k (up), l (right)</p>
-                <p>Space: Start/Pause Game</p>
+                <p>Space: Start/Pause Game, R: Restart Game</p>
             </div>
         </div>
     </div>

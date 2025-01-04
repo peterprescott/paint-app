@@ -21,7 +21,278 @@ class RogueLikeGame {
         this.healthLossInterval = 1000; // 1 second
         this.maxHealthLossPerSecond = 50;
         
+        // Predefined level designs
+        this.levelDesigns = this.generateLevelDesigns();
+        
+        // Populate level select dropdown
+        this.setupLevelSelect();
+        
         this.setupEventListeners();
+    }
+    
+    generateLevelDesigns() {
+        const levels = [
+            {
+                number: 1,
+                name: "The Crossroads",
+                description: "A symmetrical layout with intersecting walls, testing basic navigation skills.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.5 - 10, y: 0, width: 20, height: this.canvas.height * 0.4},
+                    {x: this.canvas.width * 0.5 - 10, y: this.canvas.height * 0.6, width: 20, height: this.canvas.height * 0.4},
+                    {x: 0, y: this.canvas.height * 0.5 - 10, width: this.canvas.width * 0.4, height: 20},
+                    {x: this.canvas.width * 0.6, y: this.canvas.height * 0.5 - 10, width: this.canvas.width * 0.4, height: 20}
+                ]
+            },
+            {
+                number: 2,
+                name: "Spiral Maze",
+                description: "Winding walls create a challenging path with multiple turns and tight passages.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.2, width: 20, height: this.canvas.height * 0.6},
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.8 - 20, width: this.canvas.width * 0.6, height: 20},
+                    {x: this.canvas.width * 0.8 - 20, y: this.canvas.height * 0.2, width: 20, height: this.canvas.height * 0.6},
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.3, width: this.canvas.width * 0.4, height: 20}
+                ]
+            },
+            {
+                number: 3,
+                name: "Divided Chambers",
+                description: "Segmented areas with limited passage points, requiring strategic movement.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.3, y: 0, width: 20, height: this.canvas.height * 0.5},
+                    {x: this.canvas.width * 0.7, y: this.canvas.height * 0.5, width: 20, height: this.canvas.height * 0.5},
+                    {x: 0, y: this.canvas.height * 0.3, width: this.canvas.width * 0.5, height: 20},
+                    {x: this.canvas.width * 0.5, y: this.canvas.height * 0.7, width: this.canvas.width * 0.5, height: 20}
+                ]
+            },
+            {
+                number: 4,
+                name: "Diagonal Barriers",
+                description: "Angled walls create unique navigation challenges and require precise movement.",
+                outerWalls: true,
+                walls: [
+                    {x: 0, y: this.canvas.height * 0.3, width: this.canvas.width * 0.7, height: 20, rotation: 45},
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.7, width: this.canvas.width * 0.7, height: 20, rotation: -45}
+                ]
+            },
+            {
+                number: 5,
+                name: "Obstacle Course",
+                description: "Scattered wall segments create a complex navigation environment.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.2, width: 20, height: 100},
+                    {x: this.canvas.width * 0.5, y: this.canvas.height * 0.4, width: 20, height: 100},
+                    {x: this.canvas.width * 0.8, y: this.canvas.height * 0.6, width: 20, height: 100}
+                ]
+            },
+            {
+                number: 6,
+                name: "Zigzag Challenge",
+                description: "Navigate through a series of alternating diagonal walls.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.1, y: this.canvas.height * 0.2, width: this.canvas.width * 0.4, height: 20, rotation: 30},
+                    {x: this.canvas.width * 0.5, y: this.canvas.height * 0.5, width: this.canvas.width * 0.4, height: 20, rotation: -30},
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.8, width: this.canvas.width * 0.4, height: 20, rotation: 30}
+                ]
+            },
+            {
+                number: 7,
+                name: "Narrow Passages",
+                description: "Tight corridors test your ability to navigate with precision.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.2, y: 0, width: 20, height: this.canvas.height * 0.4},
+                    {x: this.canvas.width * 0.8 - 20, y: this.canvas.height * 0.6, width: 20, height: this.canvas.height * 0.4},
+                    {x: 0, y: this.canvas.height * 0.4, width: this.canvas.width * 0.3, height: 20},
+                    {x: this.canvas.width * 0.7, y: this.canvas.height * 0.6, width: this.canvas.width * 0.3, height: 20}
+                ]
+            },
+            {
+                number: 8,
+                name: "Checkerboard",
+                description: "Alternating walls form a checkerboard pattern, offering limited pathways.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.2, width: 20, height: this.canvas.height * 0.2},
+                    {x: this.canvas.width * 0.4, y: this.canvas.height * 0.4, width: 20, height: this.canvas.height * 0.2},
+                    {x: this.canvas.width * 0.6, y: this.canvas.height * 0.2, width: 20, height: this.canvas.height * 0.2},
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.6, width: 20, height: this.canvas.height * 0.2}
+                ]
+            },
+            {
+                number: 9,
+                name: "Circular Path",
+                description: "Concentric circular walls create a maze-like path.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.25, y: this.canvas.height * 0.25, width: this.canvas.width * 0.5, height: this.canvas.height * 0.5, shape: "circle"}
+                ]
+            },
+            {
+                number: 10,
+                name: "Gridlock",
+                description: "A grid layout with alternating gaps to navigate.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.1, y: 0, width: 20, height: this.canvas.height * 0.3},
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.2, width: 20, height: this.canvas.height * 0.3},
+                    {x: this.canvas.width * 0.5, y: this.canvas.height * 0.4, width: 20, height: this.canvas.height * 0.3}
+                ]
+            },
+            {
+                number: 11,
+                name: "Crossover Chaos",
+                description: "Intersecting diagonal walls create a web-like layout.",
+                outerWalls: true,
+                walls: [
+                    {x: 0, y: 0, width: this.canvas.width, height: 20, rotation: 45},
+                    {x: this.canvas.width, y: 0, width: this.canvas.width, height: 20, rotation: -45}
+                ]
+            },
+            {
+                number: 12,
+                name: "Split Decisions",
+                description: "Forked paths force players to make quick decisions.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.3, width: 20, height: this.canvas.height * 0.4},
+                    {x: this.canvas.width * 0.7, y: this.canvas.height * 0.3, width: 20, height: this.canvas.height * 0.4}
+                ]
+            },
+            {
+                number: 13,
+                name: "The Loop",
+                description: "A circular path with an interior barrier requiring a detour.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.25, y: this.canvas.height * 0.25, width: this.canvas.width * 0.5, height: this.canvas.height * 0.5, shape: "circle"},
+                    {x: this.canvas.width * 0.4, y: this.canvas.height * 0.4, width: this.canvas.width * 0.2, height: this.canvas.height * 0.2, shape: "circle"}
+                ]
+            },
+            {
+                number: 14,
+                name: "The Zigzag Tunnel",
+                description: "A single, narrow, winding passage challenges navigation.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.2, y: this.canvas.height * 0.1, width: 20, height: 200, rotation: 45},
+                    {x: this.canvas.width * 0.5, y: this.canvas.height * 0.4, width: 20, height: 200, rotation: -45}
+                ]
+            },
+            {
+                number: 15,
+                name: "Double Trouble",
+                description: "Two mirrored halves create a symmetrical challenge.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.25, y: 0, width: 20, height: this.canvas.height * 0.5},
+                    {x: this.canvas.width * 0.75, y: this.canvas.height * 0.5, width: 20, height: this.canvas.height * 0.5}
+                ]
+            },
+            {
+                number: 16,
+                name: "Central Fort",
+                description: "A fortified center with multiple pathways leading in.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.4, y: this.canvas.height * 0.4, width: this.canvas.width * 0.2, height: 20},
+                    {x: this.canvas.width * 0.4, y: this.canvas.height * 0.4, width: 20, height: this.canvas.height * 0.2}
+                ]
+            },
+            {
+                number: 17,
+                name: "The Spiral",
+                description: "A continuous spiral wall creating a labyrinth path.",
+                outerWalls: true,
+                walls: [
+                    {x: this.canvas.width * 0.3, y: this.canvas.height * 0.3, width: 20, height: 100, shape: "spiral"}
+                ]
+            }
+            // Add more explicitly designed levels here
+        ];
+
+        // Combine and return all levels
+        return levels;
+    }
+
+    setupLevelSelect() {
+        const levelSelect = document.getElementById('level-select');
+        
+        // Add options for each level
+        this.levelDesigns.forEach(level => {
+            const option = document.createElement('option');
+            option.value = level.number;
+            option.textContent = `Level ${level.number}: ${level.name}`;
+            levelSelect.appendChild(option);
+        });
+
+        // Add event listener to update description
+        levelSelect.addEventListener('change', (event) => {
+            const selectedLevel = event.target.value;
+            const levelNameEl = document.getElementById('current-level-name');
+            const levelDescEl = document.getElementById('current-level-description');
+
+            if (selectedLevel === 'random') {
+                levelNameEl.textContent = 'Random Level';
+                levelDescEl.textContent = 'A randomly selected level layout will be generated.';
+            } else {
+                const level = this.levelDesigns.find(l => l.number === parseInt(selectedLevel));
+                if (level) {
+                    levelNameEl.textContent = `Level ${level.number}: ${level.name}`;
+                    levelDescEl.textContent = level.description;
+                }
+            }
+        });
+    }
+
+    generateWalls() {
+        const wallThickness = 20;
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        
+        // Reset walls
+        this.walls = [];
+        
+        // Get selected level from dropdown
+        const levelSelect = document.getElementById('level-select');
+        const selectedLevel = levelSelect.value;
+        
+        let levelDesign;
+        if (selectedLevel === 'random') {
+            // Random level selection
+            levelDesign = this.levelDesigns[Math.floor(Math.random() * this.levelDesigns.length)];
+            
+            // Update level description for random selection
+            const levelNameEl = document.getElementById('current-level-name');
+            const levelDescEl = document.getElementById('current-level-description');
+            levelNameEl.textContent = `Level ${levelDesign.number}: ${levelDesign.name}`;
+            levelDescEl.textContent = levelDesign.description;
+        } else {
+            // Specific level selection
+            levelDesign = this.levelDesigns.find(level => level.number === parseInt(selectedLevel));
+        }
+        
+        // Add outer walls if specified in the design
+        if (levelDesign.outerWalls) {
+            this.walls.push(
+                // Top wall
+                {x: 0, y: 0, width: canvasWidth, height: wallThickness},
+                // Bottom wall
+                {x: 0, y: canvasHeight - wallThickness, width: canvasWidth, height: wallThickness},
+                // Left wall
+                {x: 0, y: 0, width: wallThickness, height: canvasHeight},
+                // Right wall
+                {x: canvasWidth - wallThickness, y: 0, width: wallThickness, height: canvasHeight}
+            );
+        }
+        
+        // Add walls from the selected level design
+        this.walls.push(...levelDesign.walls);
     }
     
     setupEventListeners() {
@@ -32,6 +303,9 @@ class RogueLikeGame {
             if (e.key === ' ') {
                 e.preventDefault(); // Prevent space from scrolling
                 this.toggleGame();
+            } else if (e.key === 'r' || e.key === 'R') {
+                // Allow 'R' key to restart the game
+                this.restartGame();
             } else {
                 this.handleKeyPress(e);
             }
@@ -49,24 +323,28 @@ class RogueLikeGame {
     }
     
     startGame() {
+        // Initialize game state
         this.isGameRunning = true;
-        this.isPaused = false;
         this.lastUpdateTime = Date.now();
         this.initializePlayer();
         this.generateWalls();
         this.generateEnemies();
         this.startButton.textContent = 'Pause';
         this.startButton.style.display = 'block';
-        this.restartButton.style.display = 'none';
+        
+        // Show restart button when game starts
+        this.restartButton.style.display = 'block';
+        
+        // Start game loop
         this.gameLoop();
     }
-    
+
     pauseGame() {
         this.isGameRunning = false;
         this.isPaused = true;
         this.startButton.textContent = 'Resume';
     }
-    
+
     resumeGame() {
         this.isGameRunning = true;
         this.isPaused = false;
@@ -74,16 +352,13 @@ class RogueLikeGame {
         this.startButton.textContent = 'Pause';
         this.gameLoop();
     }
-    
+
     restartGame() {
-        this.enemies = [];
-        this.walls = [];
-        this.items = [];
-        this.startGame();
-        this.restartButton.style.display = 'none';
-    }
-    
-    initializePlayer() {
+        // Reset game state completely
+        this.isGameRunning = false;
+        this.isPaused = false;
+        
+        // Reset player stats
         this.player = {
             x: this.canvas.width / 2,
             y: this.canvas.height / 2,
@@ -97,50 +372,148 @@ class RogueLikeGame {
             nextX: this.canvas.width / 2,
             nextY: this.canvas.height / 2
         };
+
+        // Reset enemies
+        this.enemies = [];
+
+        // Regenerate walls based on current level selection
+        this.generateWalls();
+
+        // Regenerate enemies
+        this.generateEnemies();
+
+        // Reset UI elements
+        this.healthDisplay.textContent = this.player.health;
+        this.levelDisplay.textContent = this.player.level;
+        this.scoreDisplay.textContent = this.player.score;
+
+        // Reset start/pause button
+        this.startButton.textContent = 'Pause';
+        this.startButton.style.display = 'block';
+        
+        // Show restart button
+        this.restartButton.style.display = 'block';
+
+        // Clear canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Immediately start the game
+        this.startGame();
     }
     
-    generateWalls() {
-        const wallThickness = 20;
-        const canvasWidth = this.canvas.width;
-        const canvasHeight = this.canvas.height;
+    findValidSpawnPoint() {
+        const maxAttempts = 100;
+        let attempts = 0;
         
-        // Outer walls (unchanged)
-        this.walls.push(
-            // Top wall
-            {x: 0, y: 0, width: canvasWidth, height: wallThickness},
-            // Bottom wall
-            {x: 0, y: canvasHeight - wallThickness, width: canvasWidth, height: wallThickness},
-            // Left wall
-            {x: 0, y: 0, width: wallThickness, height: canvasHeight},
-            // Right wall
-            {x: canvasWidth - wallThickness, y: 0, width: wallThickness, height: canvasHeight}
-        );
-        
-        // Labyrinth-style internal walls
-        const wallSegments = [
-            // Horizontal walls
-            {x: canvasWidth * 0.2, y: canvasHeight * 0.3, width: canvasWidth * 0.6, height: wallThickness},
-            {x: canvasWidth * 0.1, y: canvasHeight * 0.6, width: canvasWidth * 0.4, height: wallThickness},
-            {x: canvasWidth * 0.5, y: canvasHeight * 0.8, width: canvasWidth * 0.4, height: wallThickness},
+        while (attempts < maxAttempts) {
+            // Generate a random point within the canvas
+            const x = Math.random() * (this.canvas.width - 60) + 30;
+            const y = Math.random() * (this.canvas.height - 60) + 30;
             
-            // Vertical walls
-            {x: canvasWidth * 0.4, y: 0, width: wallThickness, height: canvasHeight * 0.4},
-            {x: canvasWidth * 0.7, y: canvasHeight * 0.4, width: wallThickness, height: canvasHeight * 0.4},
-            {x: canvasWidth * 0.2, y: canvasHeight * 0.6, width: wallThickness, height: canvasHeight * 0.3}
-        ];
+            // Check if this point collides with any walls
+            const doesCollide = this.walls.some(wall => 
+                x < wall.x + wall.width &&
+                x + 30 > wall.x &&
+                y < wall.y + wall.height &&
+                y + 30 > wall.y
+            );
+            
+            // If no collision, return this point
+            if (!doesCollide) {
+                return { x, y };
+            }
+            
+            attempts++;
+        }
         
-        // Add wall segments
-        this.walls.push(...wallSegments);
+        // Fallback to center if no valid point found
+        return { 
+            x: this.canvas.width / 2, 
+            y: this.canvas.height / 2 
+        };
+    }
+
+    initializePlayer() {
+        // Find a valid spawn point that doesn't intersect with walls
+        const spawnPoint = this.findValidSpawnPoint();
         
-        // Optional: Add some diagonal or angled walls for more complexity
-        const angledWalls = [
-            {x: canvasWidth * 0.3, y: canvasHeight * 0.5, width: 150, height: wallThickness, rotation: 45},
-            {x: canvasWidth * 0.6, y: canvasHeight * 0.2, width: 150, height: wallThickness, rotation: -45}
-        ];
-        
-        // Add angled walls if you want extra complexity
-        // Note: Rotation would require more complex drawing logic
-        // this.walls.push(...angledWalls);
+        // Initialize player at the valid spawn point
+        this.player = {
+            x: spawnPoint.x,
+            y: spawnPoint.y,
+            width: 30,
+            height: 30,
+            speed: 10,
+            health: 250,
+            maxHealth: 250,
+            level: 1,
+            score: 0,
+            nextX: spawnPoint.x,
+            nextY: spawnPoint.y
+        };
+    }
+
+    handleKeyPress(e) {
+        if (!this.isGameRunning || this.isPaused) return;
+
+        const { key } = e;
+        const speed = this.player.speed;
+
+        // Proposed new position
+        let nextX = this.player.x;
+        let nextY = this.player.y;
+
+        // Determine movement based on key
+        switch (key) {
+            case 'h': nextX -= speed; break;
+            case 'l': nextX += speed; break;
+            case 'j': nextY += speed; break;
+            case 'k': nextY -= speed; break;
+            default: return;
+        }
+
+        // Check for wall collisions
+        const wouldCollideWithWall = this.walls.some(wall => 
+            nextX < wall.x + wall.width &&
+            nextX + this.player.width > wall.x &&
+            nextY < wall.y + wall.height &&
+            nextY + this.player.height > wall.y
+        );
+
+        if (wouldCollideWithWall) {
+            // If collision would occur, find the nearest non-wall point
+            const directions = [
+                {x: 0, y: speed},    // Down
+                {x: 0, y: -speed},   // Up
+                {x: speed, y: 0},    // Right
+                {x: -speed, y: 0}    // Left
+            ];
+
+            for (const dir of directions) {
+                const testX = this.player.x + dir.x;
+                const testY = this.player.y + dir.y;
+
+                const wouldCollide = this.walls.some(wall => 
+                    testX < wall.x + wall.width &&
+                    testX + this.player.width > wall.x &&
+                    testY < wall.y + wall.height &&
+                    testY + this.player.height > wall.y
+                );
+
+                if (!wouldCollide) {
+                    // Move to the first valid adjacent point
+                    nextX = testX;
+                    nextY = testY;
+                    break;
+                }
+            }
+        }
+
+        // Update player position
+        this.player.x = nextX;
+        this.player.y = nextY;
+        this.player.nextX = nextX;
+        this.player.nextY = nextY;
     }
     
     generateEnemies() {
@@ -171,42 +544,6 @@ class RogueLikeGame {
             } while (this.checkCollisionWithWalls(enemy));
             
             this.enemies.push(enemy);
-        }
-    }
-    
-    handleKeyPress(e) {
-        if (!this.isGameRunning) return;
-        
-        // Store next position
-        this.player.nextX = this.player.x;
-        this.player.nextY = this.player.y;
-        
-        switch(e.key) {
-            case 'k': // Up
-                this.player.nextY -= this.player.speed;
-                break;
-            case 'j': // Down
-                this.player.nextY += this.player.speed;
-                break;
-            case 'h': // Left
-                this.player.nextX -= this.player.speed;
-                break;
-            case 'l': // Right
-                this.player.nextX += this.player.speed;
-                break;
-        }
-        
-        // Check if next position is valid
-        const tempPlayer = {
-            x: this.player.nextX,
-            y: this.player.nextY,
-            width: this.player.width,
-            height: this.player.height
-        };
-        
-        if (!this.checkCollisionWithWalls(tempPlayer)) {
-            this.player.x = this.player.nextX;
-            this.player.y = this.player.nextY;
         }
     }
     
@@ -349,7 +686,7 @@ class RogueLikeGame {
         // Draw walls
         this.ctx.fillStyle = 'gray';
         this.walls.forEach(wall => {
-            // Check if wall has rotation (for future potential)
+            // Check if wall has rotation
             if (wall.rotation !== undefined) {
                 this.ctx.save();
                 this.ctx.translate(wall.x + wall.width / 2, wall.y + wall.height / 2);

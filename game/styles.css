@@ -48,3 +48,70 @@ button:hover {
     font-size: 0.9em;
     margin-top: 10px;
 }
+
+.level-selection {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.level-selection label {
+    margin-right: 10px;
+    color: #e0e0e0;
+}
+
+.level-selection select {
+    background-color: #0f3460;
+    color: #e0e0e0;
+    border: 1px solid #e94560;
+    padding: 5px;
+    border-radius: 3px;
+}
+
+#level-description {
+    text-align: center;
+    color: #e0e0e0;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #16213e;
+    border-radius: 5px;
+}
+
+#current-level-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#current-level-description {
+    font-size: 0.9em;
+}
+
+.game-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.game-buttons button {
+    background-color: #e94560;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.game-buttons button:hover {
+    background-color: #f73859;
+}
+
+#restart-game {
+    background-color: #0f3460;
+}
+
+#restart-game:hover {
+    background-color: #16213e;
+}
