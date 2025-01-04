@@ -155,7 +155,12 @@ class RogueLikeGame {
                     y: Math.random() * this.canvas.height,
                     width: 20,
                     height: 20,
-                    speed: 1
+                    baseSpeed: 1, // Base speed
+                    speed: 1, // Current speed (can vary)
+                    speedVariation: Math.random() * 0.5 + 0.5, // 0.5 to 1
+                    directionJitter: {x: 0, y: 0}, // Random movement offset
+                    jitterTimer: 0,
+                    jitterInterval: Math.random() * 1000 + 500 // Randomize jitter timing
                 };
             } while (this.checkCollisionWithWalls(enemy));
             
@@ -216,14 +221,14 @@ class RogueLikeGame {
         // Health loss mechanism
         this.healthLossTimer += deltaTime;
         if (this.healthLossTimer >= this.healthLossInterval) {
-            const enemiesNearby = this.enemies.filter(enemy => 
-                this.calculateDistance(this.player, enemy) < 100 // 100 pixel radius
+            // Find enemies touching the player
+            const touchingEnemies = this.enemies.filter(enemy => 
+                this.checkCollision(this.player, enemy)
             );
             
-            const healthLoss = Math.min(
-                this.maxHealthLossPerSecond, 
-                enemiesNearby.length * 10
-            );
+            const healthLoss = touchingEnemies.length > 0 
+                ? Math.min(this.maxHealthLossPerSecond, touchingEnemies.length * 10) 
+                : 0;
             
             this.player.health = Math.max(0, this.player.health - healthLoss);
             this.updateHealthDisplay();
@@ -235,30 +240,69 @@ class RogueLikeGame {
             this.healthLossTimer = 0;
         }
         
-        this.enemies.forEach(enemy => {
+        this.enemies.forEach((enemy, index) => {
+            // Update jitter timer and direction
+            enemy.jitterTimer += deltaTime;
+            if (enemy.jitterTimer >= enemy.jitterInterval) {
+                // Randomize direction jitter
+                enemy.directionJitter.x = (Math.random() - 0.5) * 0.5;
+                enemy.directionJitter.y = (Math.random() - 0.5) * 0.5;
+                
+                // Randomize speed slightly
+                enemy.speed = enemy.baseSpeed * enemy.speedVariation;
+                
+                // Reset timer with new random interval
+                enemy.jitterTimer = 0;
+                enemy.jitterInterval = Math.random() * 1000 + 500;
+            }
+            
             // Store next position
             const nextEnemy = { ...enemy };
             
-            // Simple enemy movement towards player
-            if (nextEnemy.x < this.player.x) nextEnemy.x += enemy.speed;
-            if (nextEnemy.x > this.player.x) nextEnemy.x -= enemy.speed;
-            if (nextEnemy.y < this.player.y) nextEnemy.y += enemy.speed;
-            if (nextEnemy.y > this.player.y) nextEnemy.y -= enemy.speed;
+            // Separation behavior
+            const separationForce = {x: 0, y: 0};
+            const separationRadius = 50; // Radius to start separating
+            
+            this.enemies.forEach((otherEnemy, otherIndex) => {
+                if (index === otherIndex) return;
+                
+                const dx = nextEnemy.x - otherEnemy.x;
+                const dy = nextEnemy.y - otherEnemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < separationRadius) {
+                    // Stronger separation when closer
+                    const separationStrength = (separationRadius - distance) / separationRadius;
+                    separationForce.x += dx * separationStrength;
+                    separationForce.y += dy * separationStrength;
+                }
+            });
+            
+            // Movement towards player with separation
+            const playerDx = this.player.x - nextEnemy.x;
+            const playerDy = this.player.y - nextEnemy.y;
+            const playerDistance = Math.sqrt(playerDx * playerDx + playerDy * playerDy);
+            
+            if (playerDistance > 0) {
+                const moveRatioX = playerDx / playerDistance;
+                const moveRatioY = playerDy / playerDistance;
+                
+                // Combine player attraction and enemy separation
+                nextEnemy.x += 
+                    (moveRatioX * enemy.speed) + 
+                    enemy.directionJitter.x + 
+                    separationForce.x * 0.1;
+                
+                nextEnemy.y += 
+                    (moveRatioY * enemy.speed) + 
+                    enemy.directionJitter.y + 
+                    separationForce.y * 0.1;
+            }
             
             // Check if next position is valid
             if (!this.checkCollisionWithWalls(nextEnemy)) {
                 enemy.x = nextEnemy.x;
                 enemy.y = nextEnemy.y;
-            }
-            
-            // Check collision with player
-            if (this.checkCollision(this.player, enemy)) {
-                this.player.health -= 5;
-                this.updateHealthDisplay();
-                
-                if (this.player.health <= 0) {
-                    this.gameOver();
-                }
             }
         });
     }
@@ -307,7 +351,7 @@ class RogueLikeGame {
         this.ctx.fillRect(this.player.x, this.player.y, this.player.width, this.player.height);
         
         // Draw enemies
-        this.ctx.fillStyle = 'red';
+        this.ctx.fillStyle = 'black';
         this.enemies.forEach(enemy => {
             this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         });
