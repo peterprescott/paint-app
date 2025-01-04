@@ -23,7 +23,19 @@ body {
     justify-content: center;
 }
 
+.tools-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .color-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.action-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -46,6 +58,10 @@ body {
 .color-btn[data-color="#FF0000"] { background-color: #FF0000; }
 .color-btn[data-color="#0000FF"] { background-color: #0000FF; }
 .color-btn[data-color="#00FF00"] { background-color: #00FF00; }
+.color-btn[data-color="#FFFFFF"] { 
+    background-color: #FFFFFF; 
+    border: 2px solid #000;
+}
 
 .color-btn.active {
     transform: scale(1.2);
@@ -57,4 +73,20 @@ body {
     border: 2px solid #333;
     background-color: white;
     cursor: crosshair;
+}
+
+#eraserBtn, #clearBtn {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #333;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#eraserBtn:hover, #clearBtn:hover {
+    background-color: #e0e0e0;
+}
+
+#eraserBtn.active {
+    background-color: #d0d0d0;
 }

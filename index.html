@@ -10,11 +10,17 @@
     <div class="container">
         <h1>Paul's Paints</h1>
         <div class="app-wrapper">
-            <div class="color-palette">
-                <button class="color-btn" data-color="#000000"></button>
-                <button class="color-btn" data-color="#FF0000"></button>
-                <button class="color-btn" data-color="#0000FF"></button>
-                <button class="color-btn" data-color="#00FF00"></button>
+            <div class="tools-container">
+                <div class="color-palette">
+                    <button class="color-btn" data-color="#000000"></button>
+                    <button class="color-btn" data-color="#FF0000"></button>
+                    <button class="color-btn" data-color="#0000FF"></button>
+                    <button class="color-btn" data-color="#00FF00"></button>
+                    <button class="color-btn" data-color="#FFFFFF"></button>
+                </div>
+                <div class="action-buttons">
+                    <button id="clearBtn">Clear</button>
+                </div>
             </div>
             <canvas id="paintCanvas" width="600" height="400"></canvas>
         </div>

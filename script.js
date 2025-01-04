@@ -2,11 +2,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
     const colorButtons = document.querySelectorAll('.color-btn');
+    const clearBtn = document.getElementById('clearBtn');
 
     let isDrawing = false;
     let currentColor = '#000000';
     let lastX = 0;
     let lastY = 0;
+
+    // Initialize canvas with white background
+    function initCanvas() {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Color selection
     colorButtons.forEach(button => {
@@ -22,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Clear canvas functionality
+    clearBtn.addEventListener('click', () => {
+        initCanvas();
+    });
+
     // Drawing functions
     function startDrawing(e) {
         isDrawing = true;
@@ -35,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.moveTo(lastX, lastY);
         ctx.lineTo(e.offsetX, e.offsetY);
         ctx.strokeStyle = currentColor;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.stroke();
 
@@ -54,4 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set initial color (black)
     colorButtons[0].classList.add('active');
+
+    // Initialize canvas
+    initCanvas();
 });
