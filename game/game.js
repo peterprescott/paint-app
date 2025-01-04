@@ -4,6 +4,7 @@ class RogueLikeGame {
         this.ctx = this.canvas.getContext('2d');
         this.player = null;
         this.enemies = [];
+        this.walls = [];
         this.items = [];
         this.isGameRunning = false;
         this.isPaused = false;
@@ -14,6 +15,11 @@ class RogueLikeGame {
         
         this.startButton = document.getElementById('start-game');
         this.restartButton = document.getElementById('restart-game');
+        
+        this.lastUpdateTime = 0;
+        this.healthLossTimer = 0;
+        this.healthLossInterval = 1000; // 1 second
+        this.maxHealthLossPerSecond = 50;
         
         this.setupEventListeners();
     }
@@ -45,7 +51,9 @@ class RogueLikeGame {
     startGame() {
         this.isGameRunning = true;
         this.isPaused = false;
+        this.lastUpdateTime = Date.now();
         this.initializePlayer();
+        this.generateWalls();
         this.generateEnemies();
         this.startButton.textContent = 'Pause';
         this.startButton.style.display = 'block';
@@ -62,12 +70,14 @@ class RogueLikeGame {
     resumeGame() {
         this.isGameRunning = true;
         this.isPaused = false;
+        this.lastUpdateTime = Date.now();
         this.startButton.textContent = 'Pause';
         this.gameLoop();
     }
     
     restartGame() {
         this.enemies = [];
+        this.walls = [];
         this.items = [];
         this.startGame();
         this.restartButton.style.display = 'none';
@@ -79,63 +89,171 @@ class RogueLikeGame {
             y: this.canvas.height / 2,
             width: 30,
             height: 30,
-            speed: 10, // Increased player speed
-            health: 100,
+            speed: 10,
+            health: 250,
+            maxHealth: 250,
             level: 1,
-            score: 0
+            score: 0,
+            nextX: this.canvas.width / 2,
+            nextY: this.canvas.height / 2
         };
+    }
+    
+    generateWalls() {
+        const wallThickness = 20;
+        
+        // Top wall
+        this.walls.push({
+            x: 0,
+            y: 0,
+            width: this.canvas.width,
+            height: wallThickness
+        });
+        
+        // Bottom wall
+        this.walls.push({
+            x: 0,
+            y: this.canvas.height - wallThickness,
+            width: this.canvas.width,
+            height: wallThickness
+        });
+        
+        // Left wall
+        this.walls.push({
+            x: 0,
+            y: 0,
+            width: wallThickness,
+            height: this.canvas.height
+        });
+        
+        // Right wall
+        this.walls.push({
+            x: this.canvas.width - wallThickness,
+            y: 0,
+            width: wallThickness,
+            height: this.canvas.height
+        });
+        
+        // Add some internal walls
+        const internalWallCount = 3;
+        for (let i = 0; i < internalWallCount; i++) {
+            this.walls.push({
+                x: Math.random() * (this.canvas.width - 100) + 50,
+                y: Math.random() * (this.canvas.height - 100) + 50,
+                width: Math.random() > 0.5 ? 20 : 100,
+                height: Math.random() > 0.5 ? 100 : 20
+            });
+        }
     }
     
     generateEnemies() {
         for (let i = 0; i < 5; i++) {
-            this.enemies.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                width: 20,
-                height: 20,
-                speed: 1 // Reduced enemy speed
-            });
+            let enemy;
+            do {
+                enemy = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    width: 20,
+                    height: 20,
+                    speed: 1
+                };
+            } while (this.checkCollisionWithWalls(enemy));
+            
+            this.enemies.push(enemy);
         }
     }
     
     handleKeyPress(e) {
         if (!this.isGameRunning) return;
         
+        // Store next position
+        this.player.nextX = this.player.x;
+        this.player.nextY = this.player.y;
+        
         switch(e.key) {
             case 'k': // Up
-                this.player.y -= this.player.speed;
+                this.player.nextY -= this.player.speed;
                 break;
             case 'j': // Down
-                this.player.y += this.player.speed;
+                this.player.nextY += this.player.speed;
                 break;
             case 'h': // Left
-                this.player.x -= this.player.speed;
+                this.player.nextX -= this.player.speed;
                 break;
             case 'l': // Right
-                this.player.x += this.player.speed;
+                this.player.nextX += this.player.speed;
                 break;
         }
         
-        this.checkBoundaries();
+        // Check if next position is valid
+        const tempPlayer = {
+            x: this.player.nextX,
+            y: this.player.nextY,
+            width: this.player.width,
+            height: this.player.height
+        };
+        
+        if (!this.checkCollisionWithWalls(tempPlayer)) {
+            this.player.x = this.player.nextX;
+            this.player.y = this.player.nextY;
+        }
     }
     
-    checkBoundaries() {
-        // Keep player within canvas
-        this.player.x = Math.max(0, Math.min(this.player.x, this.canvas.width - this.player.width));
-        this.player.y = Math.max(0, Math.min(this.player.y, this.canvas.height - this.player.height));
+    checkCollisionWithWalls(rect) {
+        return this.walls.some(wall => 
+            rect.x < wall.x + wall.width &&
+            rect.x + rect.width > wall.x &&
+            rect.y < wall.y + wall.height &&
+            rect.y + rect.height > wall.y
+        );
     }
     
     updateEnemies() {
-        this.enemies.forEach(enemy => {
-            // Simple enemy movement towards player
-            if (enemy.x < this.player.x) enemy.x += enemy.speed;
-            if (enemy.x > this.player.x) enemy.x -= enemy.speed;
-            if (enemy.y < this.player.y) enemy.y += enemy.speed;
-            if (enemy.y > this.player.y) enemy.y -= enemy.speed;
+        const currentTime = Date.now();
+        const deltaTime = currentTime - this.lastUpdateTime;
+        this.lastUpdateTime = currentTime;
+        
+        // Health loss mechanism
+        this.healthLossTimer += deltaTime;
+        if (this.healthLossTimer >= this.healthLossInterval) {
+            const enemiesNearby = this.enemies.filter(enemy => 
+                this.calculateDistance(this.player, enemy) < 100 // 100 pixel radius
+            );
             
-            // Check collision
+            const healthLoss = Math.min(
+                this.maxHealthLossPerSecond, 
+                enemiesNearby.length * 10
+            );
+            
+            this.player.health = Math.max(0, this.player.health - healthLoss);
+            this.updateHealthDisplay();
+            
+            if (this.player.health <= 0) {
+                this.gameOver();
+            }
+            
+            this.healthLossTimer = 0;
+        }
+        
+        this.enemies.forEach(enemy => {
+            // Store next position
+            const nextEnemy = { ...enemy };
+            
+            // Simple enemy movement towards player
+            if (nextEnemy.x < this.player.x) nextEnemy.x += enemy.speed;
+            if (nextEnemy.x > this.player.x) nextEnemy.x -= enemy.speed;
+            if (nextEnemy.y < this.player.y) nextEnemy.y += enemy.speed;
+            if (nextEnemy.y > this.player.y) nextEnemy.y -= enemy.speed;
+            
+            // Check if next position is valid
+            if (!this.checkCollisionWithWalls(nextEnemy)) {
+                enemy.x = nextEnemy.x;
+                enemy.y = nextEnemy.y;
+            }
+            
+            // Check collision with player
             if (this.checkCollision(this.player, enemy)) {
-                this.player.health -= 10;
+                this.player.health -= 5;
                 this.updateHealthDisplay();
                 
                 if (this.player.health <= 0) {
@@ -152,8 +270,14 @@ class RogueLikeGame {
                rect1.y + rect1.height > rect2.y;
     }
     
+    calculateDistance(obj1, obj2) {
+        const dx = obj1.x - obj2.x;
+        const dy = obj1.y - obj2.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
     updateHealthDisplay() {
-        this.healthDisplay.textContent = this.player.health;
+        this.healthDisplay.textContent = `${this.player.health} / ${this.player.maxHealth}`;
     }
     
     gameOver() {
@@ -171,6 +295,12 @@ class RogueLikeGame {
     draw() {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw walls
+        this.ctx.fillStyle = 'gray';
+        this.walls.forEach(wall => {
+            this.ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+        });
         
         // Draw player
         this.ctx.fillStyle = 'green';
