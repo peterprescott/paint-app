@@ -20,11 +20,16 @@ const sounds = {
         chord1: createChordSound([261.63, 329.63, 392.00], 3.0),
         chord2: createChordSound([220.00, 277.18, 329.63], 3.0),
         lead: createOscillatorSound(440, 2.0, 'sine')
+    },
+    custom: {
+        1: createOscillatorSound(220, 3.0, 'sine'),
+        2: createOscillatorSound(330, 3.0, 'triangle'),
+        3: createOscillatorSound(440, 3.0, 'square')
     }
 };
 
 // Grid Configuration
-const ROWS = 9;  // 3 drums, 3 bass, 3 synth
+const ROWS = 12;  // 3 drums, 3 bass, 3 synth, 3 custom
 const COLS = 16; // 16 bars
 let grid = Array(ROWS).fill().map(() => Array(COLS).fill(null));
 let currentColumn = 0;
@@ -95,7 +100,12 @@ const INSTRUMENT_ROWS = {
     // Synth
     'chord1': 6,
     'chord2': 7,
-    'lead': 8
+    'lead': 8,
+    
+    // Custom
+    '1': 9,
+    '2': 10,
+    '3': 11
 };
 
 // Play Sounds
@@ -191,7 +201,12 @@ document.getElementById('grid').addEventListener('click', (event) => {
             // Synth
             'chord1': 6,
             'chord2': 7,
-            'lead': 8
+            'lead': 8,
+            
+            // Custom
+            '1': 9,
+            '2': 10,
+            '3': 11
         };
         
         // Get the correct row for the selected instrument
@@ -239,7 +254,12 @@ document.getElementById('grid').addEventListener('mouseover', (event) => {
                 // Synth
                 'chord1': 6,
                 'chord2': 7,
-                'lead': 8
+                'lead': 8,
+                
+                // Custom
+                '1': 9,
+                '2': 10,
+                '3': 11
             };
             
             // Get the correct row for the selected instrument
@@ -381,6 +401,13 @@ function getColorForInstrument(type, key) {
             'chord1': '#6c71c4',   // Solarized violet
             'chord2': '#d33682',   // Solarized magenta
             'lead': '#93a1a1'      // Solarized base1 (muted gray)
+        },
+        
+        // Custom
+        'custom': {
+            '1': '#FF6B6B',
+            '2': '#4ECDC4',
+            '3': '#45B7D1'
         }
     };
     
@@ -394,4 +421,102 @@ window.addEventListener('load', initializeGrid);
 document.getElementById('volumeSlider').addEventListener('input', (event) => {
     const volume = parseFloat(event.target.value);
     masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+});
+
+// Add event listeners for custom sound modal
+window.addEventListener('load', () => {
+    let currentCustomInstrument = null;
+    let currentCustomSound = null;
+    
+    // Frequency slider live update
+    const frequencySlider = document.getElementById('customFrequency');
+    const frequencyValue = document.getElementById('frequencyValue');
+    frequencySlider.addEventListener('input', () => {
+        frequencyValue.textContent = `${frequencySlider.value} Hz`;
+    });
+    
+    // Amplitude slider live update
+    const amplitudeSlider = document.getElementById('customAmplitude');
+    const amplitudeValue = document.getElementById('amplitudeValue');
+    amplitudeSlider.addEventListener('input', () => {
+        amplitudeValue.textContent = amplitudeSlider.value;
+    });
+    
+    // Custom instrument buttons
+    const customButtons = document.querySelectorAll('#custom button');
+    customButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentCustomInstrument = button.textContent.split(' ')[1];
+            const modal = document.getElementById('customSoundModal');
+            modal.style.display = 'flex';
+        });
+    });
+    
+    // Play custom sound
+    document.getElementById('playCustomSound').addEventListener('click', () => {
+        const frequency = parseFloat(frequencySlider.value);
+        const amplitude = parseFloat(amplitudeSlider.value);
+        const waveType = document.getElementById('customWaveType').value;
+        
+        // Create a temporary sound to play
+        currentCustomSound = createCustomOscillatorSound(frequency, 3.0, waveType, amplitude);
+        
+        // Play the sound
+        if (currentCustomSound) {
+            currentCustomSound();
+        }
+    });
+    
+    // Create custom sound with specific parameters
+    function createCustomOscillatorSound(frequency, duration, type, amplitude) {
+        return () => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(amplitude, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(masterGainNode);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        };
+    }
+    
+    // Save custom sound
+    document.getElementById('saveCustomSound').addEventListener('click', () => {
+        const frequency = parseFloat(frequencySlider.value);
+        const amplitude = parseFloat(amplitudeSlider.value);
+        const waveType = document.getElementById('customWaveType').value;
+        
+        // Create and save the new sound
+        sounds.custom[currentCustomInstrument] = () => {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = waveType;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(amplitude, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 3.0);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(masterGainNode);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 3.0);
+        };
+        
+        // Close modal
+        document.getElementById('customSoundModal').style.display = 'none';
+    });
+    
+    // Cancel custom sound
+    document.getElementById('cancelCustomSound').addEventListener('click', () => {
+        document.getElementById('customSoundModal').style.display = 'none';
+    });
 });
