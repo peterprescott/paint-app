@@ -359,25 +359,25 @@ function createChordSound(frequencies, duration) {
 
 function getColorForInstrument(type, key) {
     const colors = {
-        // Drums: Shades of red
+        // Drums: Muted reds
         'drums': {
-            'kick': '#8B0000',     // Dark Red
-            'snare': '#B22222',    // Firebrick Red
-            'hihat': '#FF69B4'     // Hot Pink
+            'kick': '#8B0000',     // Deep Dark Red
+            'snare': '#cb4b16',    // Solarized orange
+            'hihat': '#b58900'     // Solarized yellow
         },
         
-        // Bass: Shades of green
+        // Bass: Muted greens
         'bass': {
-            'lowBass': '#006400',  // Dark Green
-            'midBass': '#008000',  // Green
-            'highBass': '#00FF00'  // Lime Green
+            'lowBass': '#859900',  // Solarized green
+            'midBass': '#2aa198',  // Solarized cyan
+            'highBass': '#268bd2'  // Solarized blue
         },
         
-        // Synth: Shades of blue
+        // Synth: Muted purples/blues
         'synth': {
-            'chord1': '#00008B',   // Dark Blue
-            'chord2': '#0000FF',   // Blue
-            'lead': '#1E90FF'      // Dodger Blue
+            'chord1': '#6c71c4',   // Solarized violet
+            'chord2': '#d33682',   // Solarized magenta
+            'lead': '#93a1a1'      // Solarized base1 (muted gray)
         }
     };
     
