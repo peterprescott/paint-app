@@ -156,16 +156,47 @@
             border-bottom: 1px dashed #888;
         }
         .grid-container {
+            width: 100%;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            width: 100%;
+            background-color: #2e2e2e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .lineOfMusic-controls {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 10px;
+            width: 100%;
+        }
+        .grid {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #333;
+            border: 2px solid #444;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .grid-row {
+            display: flex;
+            width: 100%;
+        }
+        .grid-cell {
+            flex: 1;
+            min-width: 0;
+            height: 40px;
+            background-color: #333;
+            border: 1px solid #444;
+            transition: all 0.3s ease;
+        }
+        .grid-cell:hover {
+            background-color: #444;
+        }
+        .grid-cell.active {
+            background-color: #4CAF50;
         }
         .lineOfMusic-btn {
             background-color: #444;
@@ -180,10 +211,12 @@
         .lineOfMusic-btn:hover {
             background-color: #555;
         }
-        #grid {
-            width: 100%;
+        .lineOfMusic-btn.delete {
+            background-color: #8B0000;
         }
-        
+        .lineOfMusic-btn.delete:hover {
+            background-color: #A52A2A;
+        }
         /* Modal styles */
         .modal {
             display: none;
@@ -205,13 +238,21 @@
             border-radius: 8px;
             width: 400px;
         }
+        #linesOfMusicContainer {
+            width: 90%;
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
     <h1>Beat Maker</h1>
     <div class="controls">
-        <button id="playBtn" class="control-btn play-btn">▶</button>
-        <button id="stopBtn" class="control-btn stop-btn">◼</button>
+        <button id="playPauseBtn" class="control-btn play-btn">▶</button>
         <div class="volume-control">
             <label for="volumeSlider">Volume</label>
             <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
@@ -248,14 +289,7 @@
         </div>
     </div>
 
-    <div class="grid-container">
-        <div class="lineOfMusic-controls">
-            <button id="saveLineOfMusicBtn" class="lineOfMusic-btn">💾 Save</button>
-            <button id="loadLineOfMusicBtn" class="lineOfMusic-btn">📂 Load</button>
-            <div id="lineOfMusicName" contenteditable="false">Rhythmora</div>
-        </div>
-        <div id="grid"></div>
-    </div>
+    <div id="linesOfMusicContainer"></div>
 
     <div id="customSoundModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
         <div class="modal-content" style="background-color:#333; color:white; padding:20px; border-radius:8px; width:400px;">
@@ -298,7 +332,7 @@
                 </select>
             </div>
             <div style="margin-top:20px; display: flex; justify-content: space-between;">
-                <button id="playCustomSound" style="background-color:#444; color:white; border:none;">▶ Play Sound</button>
+                <button id="playCustomSound" style="background-color:#444; color:white; border:none;"> Play Sound</button>
                 <div>
                     <button id="saveCustomSound" style="background-color:#444; color:white; border:none; margin-right:10px;">Save</button>
                     <button id="cancelCustomSound" style="background-color:#444; color:white; border:none;">Cancel</button>
@@ -312,7 +346,6 @@
         <div class="modal-content" style="background-color:#333; color:white; padding:20px; border-radius:8px; width:400px;">
             <h2>Load Line of Music</h2>
             <div id="savedLineOfMusicList"></div>
-            <button id="closeLoadModal" style="background-color:#555; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px;">Cancel</button>
         </div>
     </div>
 
