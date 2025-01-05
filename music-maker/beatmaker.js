@@ -26,7 +26,6 @@ const COLS = 16; // 16 bars
 let grid = Array(ROWS).fill().map(() => Array(COLS).fill(null));
 let currentColumn = 0;
 let isPlaying = false;
-let isRecording = false;
 let selectedInstrument = null;
 
 // Initialize Grid
@@ -76,22 +75,39 @@ function handleGridCellClick(event) {
     const row = parseInt(event.target.dataset.row);
     const col = parseInt(event.target.dataset.col);
 
-    // Toggle cell state
-    if (grid[row][col]) {
-        grid[row][col] = null;
-        event.target.style.backgroundColor = '#333';
-    } else {
-        grid[row][col] = selectedInstrument;
-        event.target.style.backgroundColor = getColorForInstrument(selectedInstrument.type);
-    }
 }
+
+// Precise row mapping for each specific instrument
+const INSTRUMENT_ROWS = {
+    // Drums
+    'kick': 0,
+    'snare': 1,
+    'hihat': 2,
+    
+    // Bass
+    'lowBass': 3,
+    'midBass': 4,
+    'highBass': 5,
+    
+    // Synth
+    'chord1': 6,
+    'chord2': 7,
+    'lead': 8
+};
 
 // Play Sounds
 function playSounds(column) {
-    for (let row = 0; row < ROWS; row++) {
-        const sound = grid[row][column];
-        if (sound) {
-            sounds[sound.type][sound.key]();
+    // Iterate through each instrument type
+    for (let type in sounds) {
+        for (let instrumentKey in sounds[type]) {
+            // Find the correct row for this specific instrument
+            const row = INSTRUMENT_ROWS[instrumentKey];
+            
+            // Check if there's a sound in this specific row and column
+            if (grid[row] && grid[row][column]) {
+                // Play the sound
+                sounds[type][instrumentKey]();
+            }
         }
     }
 }
@@ -131,7 +147,6 @@ document.getElementById('playBtn').addEventListener('click', () => {
 
 document.getElementById('stopBtn').addEventListener('click', () => {
     isPlaying = false;
-    isRecording = false;
     
     // Reset column highlighting
     const gridCells = document.querySelectorAll('.grid-cell');
@@ -140,9 +155,62 @@ document.getElementById('stopBtn').addEventListener('click', () => {
     });
 });
 
-document.getElementById('recordBtn').addEventListener('click', () => {
+document.getElementById('grid').addEventListener('click', (event) => {
+    console.log('Grid clicked - isPlaying:', isPlaying, 'selectedInstrument:', selectedInstrument);
+    
+    // Explicitly prevent editing when playing
     if (isPlaying) {
-        isRecording = !isRecording;
+        console.log('Editing blocked - sequencer is playing');
+        return;
+    }
+    
+    if (!selectedInstrument) {
+        console.log('No instrument selected');
+        return;
+    }
+    
+    const cell = event.target.closest('.grid-cell');
+    if (cell) {
+        const col = parseInt(cell.dataset.col);
+        
+        // Precise row mapping for each specific instrument
+        const rowMap = {
+            // Drums
+            'kick': 0,
+            'snare': 1,
+            'hihat': 2,
+            
+            // Bass
+            'lowBass': 3,
+            'midBass': 4,
+            'highBass': 5,
+            
+            // Synth
+            'chord1': 6,
+            'chord2': 7,
+            'lead': 8
+        };
+        
+        // Get the correct row for the selected instrument
+        const correctRow = rowMap[selectedInstrument.key];
+        
+        // Find the specific cell in the correct row for this column
+        const gridCells = document.querySelectorAll('.grid-cell');
+        gridCells.forEach(gridCell => {
+            const cellRow = parseInt(gridCell.dataset.row);
+            const cellCol = parseInt(gridCell.dataset.col);
+            
+            if (cellRow === correctRow && cellCol === col) {
+                // Toggle cell state
+                if (grid[correctRow][col]) {
+                    grid[correctRow][col] = null;
+                    gridCell.style.backgroundColor = '#333';
+                } else {
+                    grid[correctRow][col] = selectedInstrument;
+                    gridCell.style.backgroundColor = getColorForInstrument(selectedInstrument.type);
+                }
+            }
+        });
     }
 });
 
@@ -155,43 +223,24 @@ document.querySelectorAll('.instrument button').forEach(button => {
             if (sounds[type][instrumentKey]) {
                 sounds[type][instrumentKey]();
                 
-                // If in recording mode and playing, also add to grid
-                if (isPlaying && isRecording) {
-                    const gridCells = document.querySelectorAll('.grid-cell');
-                    gridCells.forEach(cell => {
-                        if (parseInt(cell.dataset.col) === currentColumn) {
-                            const row = parseInt(cell.dataset.row);
-                            const instrumentType = type;
-                            
-                            // Find the matching row for this instrument type
-                            const rows = {
-                                'drums': [0, 1, 2],
-                                'bass': [3, 4, 5],
-                                'synth': [6, 7, 8]
-                            };
-                            
-                            if (rows[instrumentType].includes(row)) {
-                                // Toggle cell state
-                                if (grid[row][currentColumn]) {
-                                    grid[row][currentColumn] = null;
-                                    cell.style.backgroundColor = '#333';
-                                } else {
-                                    grid[row][currentColumn] = { type: instrumentType, key: instrumentKey };
-                                    cell.style.backgroundColor = getColorForInstrument(instrumentType);
-                                }
-                            }
-                        }
-                    });
-                }
+                // Update selected instrument
+                selectedInstrument = { type, key: instrumentKey };
                 
                 break;
             }
         }
-        
-        // Always update selected instrument
-        selectInstrument(instrumentKey);
     });
 });
+
+// Add CSS for hover effect
+const styleElement = document.createElement('style');
+styleElement.textContent = `
+.grid-cell:hover {
+    border: 2px solid white !important;
+    cursor: pointer;
+}
+`;
+document.head.appendChild(styleElement);
 
 // Utility Functions (from previous implementation)
 function createOscillatorSound(frequency, duration, type = 'sine') {

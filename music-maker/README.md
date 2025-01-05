@@ -14,18 +14,13 @@ A vanilla JavaScript web application inspired by Ableton, allowing users to crea
 ## How to Use
 1. Open `index.html` in a modern web browser
 2. Select an instrument by clicking its button
-3. Click the grid cells while playing to add sounds
+3. When stopped, click grid cells to add/remove sounds
 4. Use Play/Stop buttons to control playback
-
-## Technical Details
-- Uses Web Audio API for sound generation
-- Vanilla JavaScript implementation
-- No external libraries required
 
 ## Interaction Flow
 - Select an instrument
+- When stopped, click grid to place sounds
 - Press Play to start the sequencer
-- Click grid cells to add/remove sounds
 - Press Stop to halt playback
 
 ## Limitations
