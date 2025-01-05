@@ -577,6 +577,87 @@ class LineOfMusic {
         nameDiv.style.textOverflow = 'ellipsis';
         nameDiv.style.whiteSpace = 'nowrap';
 
+        // Status message div
+        const statusDiv = document.createElement('div');
+        statusDiv.style.flex = '1';
+        statusDiv.style.textAlign = 'center';
+        statusDiv.style.color = '#888';
+        statusDiv.style.fontStyle = 'italic';
+        statusDiv.style.fontSize = '0.8em';
+        statusDiv.style.maxWidth = '400px';  
+        statusDiv.style.margin = '0 auto';  
+        statusDiv.style.wordWrap = 'break-word';  
+
+        // Method to update status message
+        this.updateStatus = (message, isError = false) => {
+            statusDiv.textContent = message;
+            statusDiv.style.color = isError ? '#ff4444' : '#888';
+            
+            // Clear message after 3 seconds
+            clearTimeout(this.statusTimeout);
+            this.statusTimeout = setTimeout(() => {
+                statusDiv.textContent = '';
+            }, 3000);
+        };
+
+        // Modify handleCellClick to add status message
+        const originalHandleCellClick = this.handleCellClick;
+        this.handleCellClick = (event) => {
+            originalHandleCellClick.call(this, event);
+            
+            // Get the clicked cell's position
+            const cell = event.target;
+            const rowIndex = Array.from(cell.parentNode.parentNode.children).indexOf(cell.parentNode);
+            const colIndex = Array.from(cell.parentNode.children).indexOf(cell);
+            
+            // Get the sound type for the current instrument
+            const currentInstrument = selectedInstrument;
+            
+            // Update status with cell and sound information
+            this.updateStatus(`Added ${currentInstrument.type} ${currentInstrument.key} to bar ${Math.floor(colIndex / 4) + 1}, beat ${(colIndex % 4) + 1}.`);
+        };
+
+        // Modify save method to add status message
+        const originalSave = this.save;
+        this.save = () => {
+            // Check if the grid has any sounds
+            const hasAnySounds = this.gridData.some(row => 
+                row.some(cell => cell !== null)
+            );
+
+            if (!hasAnySounds) {
+                this.updateStatus('Unable to save until sounds are added', true);
+                return;
+            }
+
+            // Proceed with saving if grid has sounds
+            const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+            
+            // Save or update the line
+            savedLines[this.options.name] = {
+                name: this.options.name,
+                grid: JSON.stringify(this.gridData),
+                timestamp: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('savedLineOfMusic', JSON.stringify(savedLines));
+
+            // Optional: Provide visual feedback
+            this.grid.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+            setTimeout(() => {
+                this.grid.style.backgroundColor = '';
+            }, 500);
+        };
+
+        // Modify load method to add status message
+        const originalLoad = this.load;
+        this.load = () => {
+            // Call original load method
+            const loadResult = originalLoad.call(this);
+       const currentInstrument = this.instruments[this.selectedInstrumentIndex];
+       this.updateStatus(`Added ${currentInstrument.type} ${currentInstrument.key} to bar ${Math.floor(colIndex / 4) + 1}, beat ${(colIndex % 4) + 1}`); };
+
         // Edit button
         const editButton = document.createElement('button');
         editButton.textContent = '✎';
@@ -587,6 +668,22 @@ class LineOfMusic {
         editButton.style.padding = '2px 6px';
         editButton.style.fontSize = '12px';
         editButton.style.cursor = 'pointer';
+
+        // Lists for validation
+        const adjectives = [
+            'funky', 'jazzy', 'groovy', 'cosmic', 'electric', 
+            'psychedelic', 'smooth', 'wild', 'epic', 'experimental'
+        ];
+
+        const composers = [
+            'beethoven', 'eminem', 'daftpunk', 'mozart', 'bach', 
+            'kendrick', 'tchaikovsky', 'bowie', 'zappa', 'vivaldi'
+        ];
+
+        const nouns = [
+            'beat', 'loop', 'motif', 'rhythm', 'groove', 
+            'sequence', 'pattern', 'wave', 'pulse', 'flow'
+        ];
 
         // Edit modal
         const editModal = document.createElement('div');
@@ -607,9 +704,9 @@ class LineOfMusic {
 
         // Edit sections
         const sections = [
-            { label: 'Adjective', list: [] },
-            { label: 'Composer', list: [] },
-            { label: 'Noun', list: [] }
+            { label: 'Adjective', list: adjectives },
+            { label: 'Composer', list: composers },
+            { label: 'Noun', list: nouns }
         ];
 
         sections.forEach(section => {
@@ -683,14 +780,26 @@ class LineOfMusic {
             const newComposer = modalContent.querySelectorAll('input')[1].value.toLowerCase().trim();
             const newNoun = modalContent.querySelectorAll('input')[2].value.toLowerCase().trim();
 
-            const newName = `${newAdjective}_${newComposer}_${newNoun}_${currentNumber}`;
-            
-            // Update name
-            this.options.name = newName;
-            nameDiv.textContent = newName;
+            // Validate inputs against lists
+            const isValidAdjective = adjectives.includes(newAdjective);
+            const isValidComposer = composers.includes(newComposer);
+            const isValidNoun = nouns.includes(newNoun);
 
-            // Hide modal
-            editModal.style.display = 'none';
+            if (isValidAdjective && isValidComposer && isValidNoun) {
+                const newName = `${newAdjective}_${newComposer}_${newNoun}_${currentNumber}`;
+                
+                // Update name
+                this.options.name = newName;
+                nameDiv.textContent = newName;
+
+                // Hide modal
+                editModal.style.display = 'none';
+            } else {
+                // Highlight invalid inputs
+                modalContent.querySelectorAll('input')[0].style.borderColor = isValidAdjective ? '#666' : 'red';
+                modalContent.querySelectorAll('input')[1].style.borderColor = isValidComposer ? '#666' : 'red';
+                modalContent.querySelectorAll('input')[2].style.borderColor = isValidNoun ? '#666' : 'red';
+            }
         });
 
         // Cancel modal button handler
@@ -727,8 +836,9 @@ class LineOfMusic {
             buttonContainer.appendChild(el)
         );
 
-        // Append name container and button container to controls
+        // Append name container, status div, and button container to controls
         controlsDiv.appendChild(nameContainer);
+        controlsDiv.appendChild(statusDiv);
         controlsDiv.appendChild(buttonContainer);
 
         return controlsDiv;
@@ -795,17 +905,38 @@ class LineOfMusic {
     }
 
     save() {
-        const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
-        const name = this.container.querySelector('[id^="lineOfMusicName"]').textContent;
+        // Check if the grid has any sounds
+        const hasAnySounds = this.gridData.some(row => 
+            row.some(cell => cell !== null)
+        );
 
-        savedLines[name] = {
-            name: name,
+        if (!hasAnySounds) {
+            // Optional: Add visual feedback
+            this.grid.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            setTimeout(() => {
+                this.grid.style.backgroundColor = '';
+            }, 500);
+            return;
+        }
+
+        // Proceed with saving if grid has sounds
+        const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+        
+        // Save or update the line
+        savedLines[this.options.name] = {
+            name: this.options.name,
             grid: JSON.stringify(this.gridData),
             timestamp: new Date().toISOString()
         };
 
+        // Save to localStorage
         localStorage.setItem('savedLineOfMusic', JSON.stringify(savedLines));
-        alert(`Saved "${name}" to localStorage`);
+
+        // Optional: Provide visual feedback
+        this.grid.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+        setTimeout(() => {
+            this.grid.style.backgroundColor = '';
+        }, 500);
     }
 
     load() {
