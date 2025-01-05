@@ -111,9 +111,13 @@ function sequencerLoop() {
     const gridCells = document.querySelectorAll('.grid-cell');
     gridCells.forEach(cell => {
         if (parseInt(cell.dataset.col) === currentColumn) {
-            cell.style.opacity = '0.7';
+            cell.style.opacity = '1';
+            cell.style.boxShadow = '0 0 10px 3px rgba(255, 255, 255, 0.7)';
+            cell.style.transform = 'scale(1.05)';
         } else {
             cell.style.opacity = '1';
+            cell.style.boxShadow = 'none';
+            cell.style.transform = 'scale(1)';
         }
     });
 
@@ -129,25 +133,49 @@ function sequencerLoop() {
     }
 }
 
-// Event Listeners
-document.getElementById('playBtn').addEventListener('click', () => {
-    if (!isPlaying) {
-        isPlaying = true;
-        currentColumn = 0;
+// Initialize play state
+let isPlaying = false;
+let currentColumn = 0;
+
+// Play/Pause Event Listener
+document.getElementById('playPauseBtn').addEventListener('click', () => {
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    
+    // Toggle play state
+    isPlaying = !isPlaying;
+    
+    if (isPlaying) {
+        // Change button to pause symbol
+        playPauseBtn.textContent = '❚❚';
+        
+        // Reset column to start if we're starting from the beginning
+        if (currentColumn === 0) {
+            // Reset all cell styles
+            const gridCells = document.querySelectorAll('.grid-cell');
+            gridCells.forEach(cell => {
+                cell.style.opacity = '1';
+                cell.style.boxShadow = 'none';
+                cell.style.transform = 'scale(1)';
+            });
+        }
+        
+        // Start sequencer
         sequencerLoop();
+    } else {
+        // Change button back to play symbol
+        playPauseBtn.textContent = '▶';
+        
+        // Reset all cell styles
+        const gridCells = document.querySelectorAll('.grid-cell');
+        gridCells.forEach(cell => {
+            cell.style.opacity = '1';
+            cell.style.boxShadow = 'none';
+            cell.style.transform = 'scale(1)';
+        });
     }
 });
 
-document.getElementById('stopBtn').addEventListener('click', () => {
-    isPlaying = false;
-    
-    // Reset column highlighting
-    const gridCells = document.querySelectorAll('.grid-cell');
-    gridCells.forEach(cell => {
-        cell.style.opacity = '1';
-    });
-});
-
+// Event Listeners
 document.querySelectorAll('.instrument button').forEach(button => {
     button.addEventListener('click', function() {
         const instrumentKey = this.getAttribute('onclick').match(/'([^']*)'/)[1];
@@ -441,8 +469,6 @@ window.addEventListener('load', () => {
 // Initialize on page load
 window.addEventListener('load', () => {
     // Initialize variables
-    let isPlaying = false;
-    let currentColumn = 0;
     let selectedInstrument = null;
 });
 
@@ -450,6 +476,19 @@ window.addEventListener('load', () => {
 document.getElementById('volumeSlider').addEventListener('input', (event) => {
     const volume = parseFloat(event.target.value);
     masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+});
+
+// Global event listener for spacebar play/pause
+document.addEventListener('keydown', (event) => {
+    // Check if spacebar is pressed
+    if (event.code === 'Space') {
+        // Prevent default spacebar behavior (scrolling)
+        event.preventDefault();
+        
+        // Trigger play/pause
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        playPauseBtn.click();
+    }
 });
 
 // LineOfMusic class
