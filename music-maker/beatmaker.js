@@ -158,11 +158,11 @@ document.getElementById('stopBtn').addEventListener('click', () => {
 document.getElementById('grid').addEventListener('click', (event) => {
     console.log('Grid clicked - isPlaying:', isPlaying, 'selectedInstrument:', selectedInstrument);
     
-    // Explicitly prevent editing when playing
-    if (isPlaying) {
-        console.log('Editing blocked - sequencer is playing');
-        return;
-    }
+    // // Explicitly prevent editing when playing
+    // if (isPlaying) {
+    //     console.log('Editing blocked - sequencer is playing');
+    //     return;
+    // }
     
     if (!selectedInstrument) {
         console.log('No instrument selected');
