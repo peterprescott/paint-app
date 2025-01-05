@@ -77,101 +77,100 @@ const INSTRUMENT_ROWS = {
 };
 
 // Play Sounds
-function playSounds(column) {
-    // Get all lines of music
-    const linesOfMusic = document.querySelectorAll('.grid-container');
+function playSounds(column, lineOfMusicInstance) {
+    const gridData = lineOfMusicInstance.gridData;
     
-    linesOfMusic.forEach(lineContainer => {
-        // Iterate through each instrument type
-        for (let type in sounds) {
-            for (let instrumentKey in sounds[type]) {
-                // Find the correct row for this specific instrument
-                const row = INSTRUMENT_ROWS[instrumentKey];
-                
-                // Find the specific grid for this line of music
-                const grid = lineContainer.querySelector('.grid');
-                
-                // Check if there's a sound in this specific row and column
-                const cell = grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${column}"]`);
-                
-                if (cell && cell.classList.contains('active')) {
-                    // Play the sound for the row's original instrument
-                    sounds[type][instrumentKey]();
-                }
+    // Iterate through each instrument type
+    for (let type in sounds) {
+        for (let instrumentKey in sounds[type]) {
+            // Find the specific row for this instrument
+            const row = INSTRUMENT_ROWS[instrumentKey];
+            
+            // Check if there's a sound in this specific row and column
+            const cell = gridData[row][column];
+            
+            if (cell !== null) {
+                // Play the sound for the row's original instrument
+                const soundFunc = sounds[type][instrumentKey];
+                soundFunc();
             }
         }
-    });
-}
-
-// Sequencer Loop
-function sequencerLoop() {
-    if (!isPlaying) return;
-
-    // Highlight current column across all lines of music
-    const gridCells = document.querySelectorAll('.grid-cell');
-    gridCells.forEach(cell => {
-        if (parseInt(cell.dataset.col) === currentColumn) {
-            cell.style.opacity = '1';
-            cell.style.boxShadow = '0 0 10px 3px rgba(255, 255, 255, 0.7)';
-            cell.style.transform = 'scale(1.05)';
-        } else {
-            cell.style.opacity = '1';
-            cell.style.boxShadow = 'none';
-            cell.style.transform = 'scale(1)';
-        }
-    });
-
-    // Play sounds for the current column
-    playSounds(currentColumn);
-
-    // Move to next column
-    currentColumn = (currentColumn + 1) % 16;
-
-    // Schedule next iteration
-    if (isPlaying) {
-        setTimeout(sequencerLoop, 250); // Adjust tempo as needed
     }
 }
 
-// Initialize play state
+// Global variables for sequential line playing
+let currentLineIndex = 0;
+let lineContainers = [];
 let isPlaying = false;
 let currentColumn = 0;
+let tempo = 250;
 
-// Play/Pause Event Listener
-document.getElementById('playPauseBtn').addEventListener('click', () => {
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    
-    // Toggle play state
-    isPlaying = !isPlaying;
-    
-    if (isPlaying) {
-        // Change button to pause symbol
-        playPauseBtn.textContent = '❚❚';
+function sequencerLoop() {
+    if (!isPlaying) return;
+
+    // Get all LineOfMusic containers on first call
+    if (lineContainers.length === 0) {
+        const linesOfMusicContainer = document.getElementById('linesOfMusicContainer');
+        lineContainers = Array.from(linesOfMusicContainer.querySelectorAll('.lineOfMusic-controls'));
+    }
+
+    // Get the current line instance
+    const currentLineContainer = lineContainers[currentLineIndex];
+    const lineOfMusicInstance = currentLineContainer.__lineOfMusicInstance;
+
+    if (lineOfMusicInstance) {
+        // Find the grid associated with this line
+        const grid = currentLineContainer.closest('.lineOfMusic-container')?.querySelector('.grid');
         
-        // Reset column to start if we're starting from the beginning
-        if (currentColumn === 0) {
-            // Reset all cell styles
-            const gridCells = document.querySelectorAll('.grid-cell');
+        if (grid) {
+            // Reset all grid cells in this line
+            const gridCells = grid.querySelectorAll('.grid-cell');
             gridCells.forEach(cell => {
                 cell.style.opacity = '1';
                 cell.style.boxShadow = 'none';
                 cell.style.transform = 'scale(1)';
             });
+
+            // Highlight current column
+            const currentColumnCells = grid.querySelectorAll(`.grid-cell[data-col="${currentColumn}"]`);
+            currentColumnCells.forEach(cell => {
+                cell.style.opacity = '1';
+                cell.style.boxShadow = '0 0 10px 3px rgba(255, 255, 255, 0.7)';
+                cell.style.transform = 'scale(1.05)';
+            });
         }
-        
-        // Start sequencer
+
+        // Play sounds for the current column on this line
+        playSounds(currentColumn, lineOfMusicInstance);
+    }
+
+    // Increment column
+    currentColumn = (currentColumn + 1) % 16;
+
+    // Move to next line if we've played the full column
+    if (currentColumn === 0) {
+        currentLineIndex = (currentLineIndex + 1) % lineContainers.length;
+    }
+
+    // Schedule next iteration
+    setTimeout(sequencerLoop, tempo);
+}
+
+// Play/Pause Event Listener
+document.getElementById('playPauseBtn').addEventListener('click', () => {
+    isPlaying = !isPlaying;
+    const playPauseBtn = document.getElementById('playPauseBtn');
+
+    if (isPlaying) {
+        // Reset line index when starting playback
+        currentLineIndex = 0;
+        currentColumn = 0;
+        lineContainers = [];
+
+        playPauseBtn.textContent = '❚❚';  // Pause symbol
         sequencerLoop();
     } else {
-        // Change button back to play symbol
-        playPauseBtn.textContent = '▶';
-        
-        // Reset all cell styles
-        const gridCells = document.querySelectorAll('.grid-cell');
-        gridCells.forEach(cell => {
-            cell.style.opacity = '1';
-            cell.style.boxShadow = 'none';
-            cell.style.transform = 'scale(1)';
-        });
+        playPauseBtn.textContent = '▶';  // Play symbol
     }
 });
 
@@ -540,6 +539,9 @@ class LineOfMusic {
 
         // Attach to DOM
         this.render();
+
+        // Add a reference to the instance on the container for easy access
+        this.container.querySelector('.lineOfMusic-controls').__lineOfMusicInstance = this;
     }
 
     // Static property to track number of instances
@@ -852,11 +854,25 @@ class LineOfMusic {
         toggleGridButton.style.backgroundColor = '#d33682';  // Solarized magenta/purple
         toggleGridButton.style.color = 'white';
 
+        // New Line button
+        const newLineButton = this.createButton(' New Line ↓', () => {
+            // Create a new LineOfMusic instance and add it below the current one
+            const newLine = new LineOfMusic();
+            
+            // If this is part of a container, insert the new line after this one
+            if (this.container.parentNode) {
+                this.container.parentNode.insertBefore(newLine.container, this.container.nextSibling);
+            }
+        }, 'new-line-btn');
+        newLineButton.style.backgroundColor = '#859900';  // Solarized green
+        newLineButton.style.color = 'white';
+
         // Append buttons to container
         buttonsContainer.appendChild(saveBtn);
         buttonsContainer.appendChild(loadBtn);
         buttonsContainer.appendChild(deleteButton);
         buttonsContainer.appendChild(toggleGridButton);
+        buttonsContainer.appendChild(newLineButton);
 
         // Append name container, status div, and button container
         controlsDiv.appendChild(nameContainer);
