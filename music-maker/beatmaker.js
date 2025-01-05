@@ -643,29 +643,87 @@ class LineOfMusic {
         savedLineOfMusicList.innerHTML = '';
         
         if (Object.keys(savedLines).length === 0) {
-            savedLineOfMusicList.innerHTML = '<p>No saved lines of music found.</p>';
+            const noLinesMessage = document.createElement('p');
+            noLinesMessage.textContent = 'No saved lines of music found.';
+            savedLineOfMusicList.appendChild(noLinesMessage);
         } else {
             Object.values(savedLines).forEach(line => {
+                // Create a container for each line entry
+                const lineEntryContainer = document.createElement('div');
+                lineEntryContainer.style.display = 'flex';
+                lineEntryContainer.style.alignItems = 'center';
+                lineEntryContainer.style.marginBottom = '10px';
+
+                // Create line button
                 const lineButton = document.createElement('button');
                 lineButton.textContent = `${line.name} (Saved: ${new Date(line.timestamp).toLocaleString()})`;
-                lineButton.style.display = 'block';
-                lineButton.style.width = '100%';
-                lineButton.style.marginBottom = '10px';
+                lineButton.style.flex = '1';
                 lineButton.style.backgroundColor = '#555';
                 lineButton.style.color = 'white';
                 lineButton.style.border = 'none';
                 lineButton.style.padding = '10px';
                 lineButton.style.borderRadius = '5px';
+                lineButton.style.marginRight = '10px';
                 
                 lineButton.addEventListener('click', () => {
                     const gridData = JSON.parse(line.grid);
                     this.loadGridData(gridData, line.name);
                     document.getElementById('loadLineOfMusicModal').style.display = 'none';
                 });
-                
-                savedLineOfMusicList.appendChild(lineButton);
+
+                // Create delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '✕';
+                deleteButton.style.backgroundColor = 'transparent';
+                deleteButton.style.color = '#888';
+                deleteButton.style.border = 'none';
+                deleteButton.style.padding = '0 5px';
+                deleteButton.style.fontSize = '16px';
+                deleteButton.style.cursor = 'pointer';
+                deleteButton.style.fontWeight = 'bold';
+
+                deleteButton.addEventListener('click', (event) => {
+                    // Stop propagation to prevent load action
+                    event.stopPropagation();
+
+                    // Remove from saved lines
+                    delete savedLines[line.name];
+                    localStorage.setItem('savedLineOfMusic', JSON.stringify(savedLines));
+
+                    // Remove from the list
+                    lineEntryContainer.remove();
+
+                    // If no lines left, show "No saved lines" message
+                    if (Object.keys(savedLines).length === 0) {
+                        savedLineOfMusicList.innerHTML = '<p>No saved lines of music found.</p>';
+                    }
+                });
+
+                // Append button and delete to container
+                lineEntryContainer.appendChild(lineButton);
+                lineEntryContainer.appendChild(deleteButton);
+
+                savedLineOfMusicList.appendChild(lineEntryContainer);
             });
         }
+        
+        // Add cancel button (always added, regardless of saved lines)
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = 'Cancel';
+        cancelButton.style.display = 'block';
+        cancelButton.style.width = '100%';
+        cancelButton.style.marginTop = '10px';
+        cancelButton.style.backgroundColor = '#444';
+        cancelButton.style.color = 'white';
+        cancelButton.style.border = 'none';
+        cancelButton.style.padding = '10px';
+        cancelButton.style.borderRadius = '5px';
+        
+        cancelButton.addEventListener('click', () => {
+            document.getElementById('loadLineOfMusicModal').style.display = 'none';
+        });
+        
+        savedLineOfMusicList.appendChild(cancelButton);
         
         document.getElementById('loadLineOfMusicModal').style.display = 'flex';
     }
