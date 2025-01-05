@@ -603,18 +603,24 @@ class LineOfMusic {
         // Modify handleCellClick to add status message
         const originalHandleCellClick = this.handleCellClick;
         this.handleCellClick = (event) => {
-            originalHandleCellClick.call(this, event);
-            
-            // Get the clicked cell's position
+            // Store the previous state of the cell before modification
             const cell = event.target;
             const rowIndex = Array.from(cell.parentNode.parentNode.children).indexOf(cell.parentNode);
             const colIndex = Array.from(cell.parentNode.children).indexOf(cell);
-            
-            // Get the sound type for the current instrument
             const currentInstrument = selectedInstrument;
-            
-            // Update status with cell and sound information
-            this.updateStatus(`Added ${currentInstrument.type} ${currentInstrument.key} to bar ${Math.floor(colIndex / 4) + 1}, beat ${(colIndex % 4) + 1}.`);
+            const previousCellState = this.gridData[rowIndex][colIndex];
+
+            // Call original handleCellClick method
+            originalHandleCellClick.call(this, event);
+
+            // Update status based on cell state change
+            if (previousCellState === null) {
+                // Sound was added
+                this.updateStatus(`Added ${currentInstrument.type} ${currentInstrument.key} to bar ${Math.floor(colIndex / 4) + 1}, beat ${(colIndex % 4) + 1}.`);
+            } else {
+                // Sound was removed
+                this.updateStatus(`Removed ${previousCellState.type} ${previousCellState.key} from bar ${Math.floor(colIndex / 4) + 1}, beat ${(colIndex % 4) + 1}.`);
+            }
         };
 
         // Modify save method to add status message
@@ -893,15 +899,31 @@ class LineOfMusic {
         // Find the right row for the selected instrument
         const row = INSTRUMENT_ROWS[selectedInstrument.key];
 
-        // Update grid data
-        this.gridData[row][col] = selectedInstrument;
+        // Check if the cell already has a sound
+        const existingSound = this.gridData[row][col];
 
-        // Find the target cell in the current grid
-        const targetCell = this.grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
-        
-        // Color the cell based on the selected instrument
-        targetCell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
-        targetCell.classList.add('active');
+        // Toggle sound: remove if exists, add if doesn't exist
+        if (existingSound) {
+            // Remove sound
+            this.gridData[row][col] = null;
+            
+            // Find the target cell in the current grid
+            const targetCell = this.grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+            
+            // Reset cell style
+            targetCell.style.backgroundColor = '';
+            targetCell.classList.remove('active');
+        } else {
+            // Add sound
+            this.gridData[row][col] = selectedInstrument;
+
+            // Find the target cell in the current grid
+            const targetCell = this.grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+            
+            // Color the cell based on the selected instrument
+            targetCell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
+            targetCell.classList.add('active');
+        }
     }
 
     save() {
