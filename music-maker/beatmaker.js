@@ -119,28 +119,30 @@ function sequencerLoop() {
     const lineOfMusicInstance = currentLineContainer.__lineOfMusicInstance;
 
     if (lineOfMusicInstance) {
-        // Find the grid associated with this line
-        const grid = currentLineContainer.closest('.lineOfMusic-container')?.querySelector('.grid');
-        
-        if (grid) {
-            // Reset all grid cells in this line
-            const gridCells = grid.querySelectorAll('.grid-cell');
-            gridCells.forEach(cell => {
-                cell.style.opacity = '1';
-                cell.style.boxShadow = 'none';
-                cell.style.transform = 'scale(1)';
-            });
+        // Reset all grid cells
+        const gridCells = document.querySelectorAll('.grid-cell');
+        gridCells.forEach(cell => {
+            cell.style.opacity = '1';
+            cell.style.boxShadow = 'none';
+            cell.style.transform = 'scale(1)';
+        });
 
-            // Highlight current column
-            const currentColumnCells = grid.querySelectorAll(`.grid-cell[data-col="${currentColumn}"]`);
-            currentColumnCells.forEach(cell => {
+        // Find the container for the current LineOfMusic instance
+        const currentContainer = currentLineContainer.closest('.grid-container');
+
+        // Highlight current column for first row of current line
+        if (currentContainer) {
+            const currentLineCells = currentContainer.querySelectorAll(
+                `.grid-cell[data-row="0"][data-col="${currentColumn}"]`
+            );
+            currentLineCells.forEach(cell => {
                 cell.style.opacity = '1';
                 cell.style.boxShadow = '0 0 10px 3px rgba(255, 255, 255, 0.7)';
                 cell.style.transform = 'scale(1.05)';
             });
         }
 
-        // Play sounds for the current column on this line
+        // Play sounds for the current column on the first row of this line
         playSounds(currentColumn, lineOfMusicInstance);
     }
 
