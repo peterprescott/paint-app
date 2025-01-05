@@ -561,52 +561,147 @@ class LineOfMusic {
         controlsDiv.style.alignItems = 'center';
         controlsDiv.style.width = '100%';
 
+        // Name container (to hold name and edit button)
+        const nameContainer = document.createElement('div');
+        nameContainer.style.display = 'flex';
+        nameContainer.style.alignItems = 'center';
+        nameContainer.style.gap = '10px';
+        nameContainer.style.flex = '1';
+
         // Name div (left-aligned)
         const nameDiv = document.createElement('div');
         nameDiv.id = `lineOfMusicName-${LineOfMusic.instanceCount}`;
         nameDiv.contentEditable = 'false';
         nameDiv.textContent = this.options.name;
-        nameDiv.style.flex = '1';
         nameDiv.style.overflow = 'hidden';
         nameDiv.style.textOverflow = 'ellipsis';
         nameDiv.style.whiteSpace = 'nowrap';
-        nameDiv.style.cursor = 'text';  // Indicate it's editable
-        
-        nameDiv.addEventListener('click', () => {
-            // Clear the text and make editable
-            nameDiv.textContent = '';
-            nameDiv.contentEditable = 'true';
-            nameDiv.focus();
+
+        // Edit button
+        const editButton = document.createElement('button');
+        editButton.textContent = '✎';
+        editButton.style.backgroundColor = '#555';
+        editButton.style.color = 'white';
+        editButton.style.border = 'none';
+        editButton.style.borderRadius = '4px';
+        editButton.style.padding = '2px 6px';
+        editButton.style.fontSize = '12px';
+        editButton.style.cursor = 'pointer';
+
+        // Edit modal
+        const editModal = document.createElement('div');
+        editModal.style.display = 'none';
+        editModal.style.position = 'fixed';
+        editModal.style.top = '50%';
+        editModal.style.left = '50%';
+        editModal.style.transform = 'translate(-50%, -50%)';
+        editModal.style.backgroundColor = '#333';
+        editModal.style.padding = '20px';
+        editModal.style.borderRadius = '8px';
+        editModal.style.zIndex = '1000';
+
+        const modalContent = document.createElement('div');
+        modalContent.style.display = 'flex';
+        modalContent.style.flexDirection = 'column';
+        modalContent.style.gap = '10px';
+
+        // Edit sections
+        const sections = [
+            { label: 'Adjective', list: [] },
+            { label: 'Composer', list: [] },
+            { label: 'Noun', list: [] }
+        ];
+
+        sections.forEach(section => {
+            const sectionDiv = document.createElement('div');
+            
+            const label = document.createElement('label');
+            label.textContent = `${section.label}: `;
+            label.style.color = 'white';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.style.width = '100%';
+            input.style.padding = '5px';
+            input.style.backgroundColor = '#444';
+            input.style.color = 'white';
+            input.style.border = '1px solid #666';
+            input.style.borderRadius = '4px';
+            
+            sectionDiv.appendChild(label);
+            sectionDiv.appendChild(input);
+            modalContent.appendChild(sectionDiv);
         });
 
-        // Add event listener for Enter key to save the name
-        nameDiv.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();  // Prevent new line
-                
-                // Trim the name and set it back if empty
-                const newName = nameDiv.textContent.trim();
-                if (newName) {
-                    nameDiv.textContent = newName;
-                } else {
-                    nameDiv.textContent = this.options.name;
-                }
-                
-                // Make non-editable
-                nameDiv.contentEditable = 'false';
-            }
+        // Save button
+        const saveModalBtn = document.createElement('button');
+        saveModalBtn.textContent = 'Save';
+        saveModalBtn.style.backgroundColor = '#268bd2';
+        saveModalBtn.style.color = 'white';
+        saveModalBtn.style.border = 'none';
+        saveModalBtn.style.padding = '10px';
+        saveModalBtn.style.borderRadius = '4px';
+
+        // Cancel button
+        const cancelModalBtn = document.createElement('button');
+        cancelModalBtn.textContent = 'Cancel';
+        cancelModalBtn.style.backgroundColor = '#555';
+        cancelModalBtn.style.color = 'white';
+        cancelModalBtn.style.border = 'none';
+        cancelModalBtn.style.padding = '10px';
+        cancelModalBtn.style.borderRadius = '4px';
+
+        // Modal buttons container
+        const modalButtonsContainer = document.createElement('div');
+        modalButtonsContainer.style.display = 'flex';
+        modalButtonsContainer.style.justifyContent = 'space-between';
+        modalButtonsContainer.appendChild(saveModalBtn);
+        modalButtonsContainer.appendChild(cancelModalBtn);
+
+        modalContent.appendChild(modalButtonsContainer);
+        editModal.appendChild(modalContent);
+        document.body.appendChild(editModal);
+
+        // Edit button click handler
+        editButton.addEventListener('click', () => {
+            // Split the current name
+            const [currentAdjective, currentComposer, currentNoun, currentNumber] = this.options.name.split('_');
+            
+            // Set current values in inputs
+            modalContent.querySelectorAll('input')[0].value = currentAdjective;
+            modalContent.querySelectorAll('input')[1].value = currentComposer;
+            modalContent.querySelectorAll('input')[2].value = currentNoun;
+
+            // Show modal
+            editModal.style.display = 'block';
         });
 
-        // Lose focus handler to revert or save
-        nameDiv.addEventListener('blur', () => {
-            const newName = nameDiv.textContent.trim();
-            if (newName) {
-                nameDiv.textContent = newName;
-            } else {
-                nameDiv.textContent = this.options.name;
-            }
-            nameDiv.contentEditable = 'false';
+        // Save modal button handler
+        saveModalBtn.addEventListener('click', () => {
+            const [, , , currentNumber] = this.options.name.split('_');
+            const newAdjective = modalContent.querySelectorAll('input')[0].value.toLowerCase().trim();
+            const newComposer = modalContent.querySelectorAll('input')[1].value.toLowerCase().trim();
+            const newNoun = modalContent.querySelectorAll('input')[2].value.toLowerCase().trim();
+
+            const newName = `${newAdjective}_${newComposer}_${newNoun}_${currentNumber}`;
+            
+            // Update name
+            this.options.name = newName;
+            nameDiv.textContent = newName;
+
+            // Hide modal
+            editModal.style.display = 'none';
         });
+
+        // Cancel modal button handler
+        cancelModalBtn.addEventListener('click', () => {
+            // Hide modal
+            editModal.style.display = 'none';
+        });
+
+        // Append name and edit button to container
+        nameContainer.appendChild(nameDiv);
+        nameContainer.appendChild(editButton);
 
         // Button container (right-aligned)
         const buttonContainer = document.createElement('div');
@@ -632,8 +727,8 @@ class LineOfMusic {
             buttonContainer.appendChild(el)
         );
 
-        // Append name and button container to controls
-        controlsDiv.appendChild(nameDiv);
+        // Append name container and button container to controls
+        controlsDiv.appendChild(nameContainer);
         controlsDiv.appendChild(buttonContainer);
 
         return controlsDiv;
