@@ -1,22 +1,25 @@
 // Audio Context and Global Variables
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const masterGainNode = audioContext.createGain();
+masterGainNode.connect(audioContext.destination);
+masterGainNode.gain.value = 0.5; // Default 50% volume
 
 // Sound Definitions
 const sounds = {
     drums: {
         kick: createOscillatorSound(100, 0.5, 'sine'),
-        snare: createNoiseSound(0.2),
-        hihat: createNoiseSound(0.1)
+        snare: createNoiseSound(2.0),
+        hihat: createNoiseSound(1.0)
     },
     bass: {
-        lowBass: createOscillatorSound(80, 0.4, 'triangle'),
-        midBass: createOscillatorSound(120, 0.3, 'sawtooth'),
-        highBass: createOscillatorSound(180, 0.2, 'square')
+        lowBass: createOscillatorSound(80, 4.0, 'triangle'),
+        midBass: createOscillatorSound(120, 3.0, 'sawtooth'),
+        highBass: createOscillatorSound(180, 2.0, 'square')
     },
     synth: {
-        chord1: createChordSound([261.63, 329.63, 392.00], 0.3),
-        chord2: createChordSound([220.00, 277.18, 329.63], 0.3),
-        lead: createOscillatorSound(440, 0.2, 'sine')
+        chord1: createChordSound([261.63, 329.63, 392.00], 3.0),
+        chord2: createChordSound([220.00, 277.18, 329.63], 3.0),
+        lead: createOscillatorSound(440, 2.0, 'sine')
     }
 };
 
@@ -300,11 +303,11 @@ function createOscillatorSound(frequency, duration, type = 'sine') {
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
         
-        gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(10, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
         
         oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        gainNode.connect(masterGainNode); // Connect to master gain node
         
         oscillator.start();
         oscillator.stop(audioContext.currentTime + duration);
@@ -325,11 +328,11 @@ function createNoiseSound(duration) {
         const gainNode = audioContext.createGain();
         
         sourceNode.buffer = noiseBuffer;
-        gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(10, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
         
         sourceNode.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        gainNode.connect(masterGainNode); // Connect to master gain node
         
         sourceNode.start();
         sourceNode.stop(audioContext.currentTime + duration);
@@ -345,11 +348,11 @@ function createChordSound(frequencies, duration) {
             oscillator.type = 'sine';
             oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
             
-            gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(10, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            gainNode.connect(masterGainNode); // Connect to master gain node
             
             oscillator.start();
             oscillator.stop(audioContext.currentTime + duration);
@@ -386,3 +389,9 @@ function getColorForInstrument(type, key) {
 
 // Initialize on page load
 window.addEventListener('load', initializeGrid);
+
+// Volume Control
+document.getElementById('volumeSlider').addEventListener('input', (event) => {
+    const volume = parseFloat(event.target.value);
+    masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+});
