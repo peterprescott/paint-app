@@ -95,7 +95,7 @@ function playSounds(column) {
                 const cell = grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${column}"]`);
                 
                 if (cell && cell.classList.contains('active')) {
-                    // Play the sound
+                    // Play the sound for the row's original instrument
                     sounds[type][instrumentKey]();
                 }
             }
@@ -605,26 +605,21 @@ class LineOfMusic {
             return;
         }
 
-        const cell = event.target;
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
+        const clickedCell = event.target;
+        const col = parseInt(clickedCell.dataset.col);
 
-        // Check if the cell is already active for this instrument
-        const currentCellData = this.gridData[row][col];
+        // Find the right row for the selected instrument
+        const row = INSTRUMENT_ROWS[selectedInstrument.key];
+
+        // Update grid data
+        this.gridData[row][col] = selectedInstrument;
+
+        // Find the target cell in the current grid
+        const targetCell = this.grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
         
-        if (currentCellData && 
-            currentCellData.type === selectedInstrument.type && 
-            currentCellData.key === selectedInstrument.key) {
-            // If the same instrument is already in the cell, remove it
-            this.gridData[row][col] = null;
-            cell.classList.remove('active');
-            cell.style.backgroundColor = '#333';
-        } else {
-            // Set the cell to the selected instrument
-            this.gridData[row][col] = selectedInstrument;
-            cell.classList.add('active');
-            cell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
-        }
+        // Color the cell based on the selected instrument
+        targetCell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
+        targetCell.classList.add('active');
     }
 
     save() {
