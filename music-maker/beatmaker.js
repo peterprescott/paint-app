@@ -494,9 +494,31 @@ document.addEventListener('keydown', (event) => {
 // LineOfMusic class
 class LineOfMusic {
     constructor(options = {}) {
+        // Define lists for random name generation
+        const adjectives = [
+            'funky', 'jazzy', 'groovy', 'cosmic', 'electric', 
+            'psychedelic', 'smooth', 'wild', 'epic', 'experimental'
+        ];
+
+        const composers = [
+            'beethoven', 'eminem', 'daftpunk', 'mozart', 'bach', 
+            'kendrick', 'tchaikovsky', 'bowie', 'zappa', 'vivaldi'
+        ];
+
+        const nouns = [
+            'beat', 'loop', 'motif', 'rhythm', 'groove', 
+            'sequence', 'pattern', 'wave', 'pulse', 'flow'
+        ];
+
+        // Generate a random name
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomComposer = composers[Math.floor(Math.random() * composers.length)];
+        const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+        const randomNumber = Math.floor(Math.random() * 10000) + 1;
+
         // Default options
         this.options = {
-            name: `Rhythmora ${LineOfMusic.instanceCount + 1}`,
+            name: `${randomAdjective}_${randomComposer}_${randomNoun}_${randomNumber}`,
             gridRows: 12,  // Explicitly set to 12 rows
             gridCols: 16,  // Explicitly set to 16 columns
             ...options
@@ -534,30 +556,85 @@ class LineOfMusic {
     createControls() {
         const controlsDiv = document.createElement('div');
         controlsDiv.classList.add('lineOfMusic-controls');
+        controlsDiv.style.display = 'flex';
+        controlsDiv.style.justifyContent = 'space-between';
+        controlsDiv.style.alignItems = 'center';
+        controlsDiv.style.width = '100%';
 
-        // Save button
-        const saveBtn = this.createButton(' Save', () => this.save());
-
-        // Load button
-        const loadBtn = this.createButton(' Load', () => this.load());
-
-        // Name div
+        // Name div (left-aligned)
         const nameDiv = document.createElement('div');
         nameDiv.id = `lineOfMusicName-${LineOfMusic.instanceCount}`;
         nameDiv.contentEditable = 'false';
         nameDiv.textContent = this.options.name;
+        nameDiv.style.flex = '1';
+        nameDiv.style.overflow = 'hidden';
+        nameDiv.style.textOverflow = 'ellipsis';
+        nameDiv.style.whiteSpace = 'nowrap';
+        nameDiv.style.cursor = 'text';  // Indicate it's editable
+        
         nameDiv.addEventListener('click', () => {
-            nameDiv.contentEditable = nameDiv.contentEditable === 'true' ? 'false' : 'true';
+            // Clear the text and make editable
+            nameDiv.textContent = '';
+            nameDiv.contentEditable = 'true';
             nameDiv.focus();
         });
+
+        // Add event listener for Enter key to save the name
+        nameDiv.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();  // Prevent new line
+                
+                // Trim the name and set it back if empty
+                const newName = nameDiv.textContent.trim();
+                if (newName) {
+                    nameDiv.textContent = newName;
+                } else {
+                    nameDiv.textContent = this.options.name;
+                }
+                
+                // Make non-editable
+                nameDiv.contentEditable = 'false';
+            }
+        });
+
+        // Lose focus handler to revert or save
+        nameDiv.addEventListener('blur', () => {
+            const newName = nameDiv.textContent.trim();
+            if (newName) {
+                nameDiv.textContent = newName;
+            } else {
+                nameDiv.textContent = this.options.name;
+            }
+            nameDiv.contentEditable = 'false';
+        });
+
+        // Button container (right-aligned)
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '10px';
+
+        // Save button (Solarized blue)
+        const saveBtn = this.createButton(' Save', () => this.save());
+        saveBtn.style.marginLeft = 'auto';
+        saveBtn.style.backgroundColor = '#268bd2';  // Solarized blue
+        saveBtn.style.color = 'white';
+
+        // Load button (Pale yellow)
+        const loadBtn = this.createButton(' Load', () => this.load());
+        loadBtn.style.backgroundColor = '#b58900';  // Solarized yellow
+        loadBtn.style.color = 'white';
 
         // Delete button
         const deleteBtn = this.createButton(' Delete', () => this.delete(), 'delete');
 
-        // Append buttons to controls
-        [saveBtn, loadBtn, nameDiv, deleteBtn].forEach(el => 
-            controlsDiv.appendChild(el)
+        // Append buttons to container
+        [saveBtn, loadBtn, deleteBtn].forEach(el => 
+            buttonContainer.appendChild(el)
         );
+
+        // Append name and button container to controls
+        controlsDiv.appendChild(nameDiv);
+        controlsDiv.appendChild(buttonContainer);
 
         return controlsDiv;
     }
