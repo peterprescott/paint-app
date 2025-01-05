@@ -139,11 +139,76 @@
             border: none;
             padding: 5px;
         }
+        #lineOfMusicName {
+            color: #888;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        #lineOfMusicName:hover {
+            color: #aaa;
+        }
+        #lineOfMusicName[contenteditable="true"] {
+            color: #ffffff;
+            font-weight: bold;
+            border-bottom: 1px dashed #888;
+        }
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .lineOfMusic-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .lineOfMusic-btn {
+            background-color: #444;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+        .lineOfMusic-btn:hover {
+            background-color: #555;
+        }
+        #grid {
+            width: 100%;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+        }
     </style>
 </head>
 <body>
     <h1>Beat Maker</h1>
-    
     <div class="controls">
         <button id="playBtn" class="control-btn play-btn">▶</button>
         <button id="stopBtn" class="control-btn stop-btn">◼</button>
@@ -183,7 +248,14 @@
         </div>
     </div>
 
-    <div id="grid"></div>
+    <div class="grid-container">
+        <div class="lineOfMusic-controls">
+            <button id="saveLineOfMusicBtn" class="lineOfMusic-btn">💾 Save</button>
+            <button id="loadLineOfMusicBtn" class="lineOfMusic-btn">📂 Load</button>
+            <div id="lineOfMusicName" contenteditable="false">Rhythmora</div>
+        </div>
+        <div id="grid"></div>
+    </div>
 
     <div id="customSoundModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
         <div class="modal-content" style="background-color:#333; color:white; padding:20px; border-radius:8px; width:400px;">
@@ -235,6 +307,91 @@
         </div>
     </div>
 
+    <!-- Add modal for loading saved lines of music -->
+    <div id="loadLineOfMusicModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+        <div class="modal-content" style="background-color:#333; color:white; padding:20px; border-radius:8px; width:400px;">
+            <h2>Load Line of Music</h2>
+            <div id="savedLineOfMusicList"></div>
+            <button id="closeLoadModal" style="background-color:#555; color:white; border:none; padding:10px; margin-top:10px; border-radius:5px;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('lineOfMusicName').addEventListener('click', function() {
+            this.contentEditable = this.contentEditable === 'true' ? 'false' : 'true';
+            this.focus();
+        });
+
+        // Modify save functionality to store multiple lines of music
+        document.getElementById('saveLineOfMusicBtn').addEventListener('click', function() {
+            const gridData = JSON.stringify(grid.getData());
+            const lineOfMusicName = document.getElementById('lineOfMusicName').textContent;
+            
+            // Retrieve existing saved lines or initialize empty object
+            const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+            
+            // Add new line of music
+            savedLines[lineOfMusicName] = {
+                name: lineOfMusicName,
+                grid: gridData,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Save updated lines
+            localStorage.setItem('savedLineOfMusic', JSON.stringify(savedLines));
+            
+            alert(`Saved "${lineOfMusicName}" to localStorage`);
+        });
+
+        // Modify load functionality to show a modal with saved lines
+        document.getElementById('loadLineOfMusicBtn').addEventListener('click', function() {
+            const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+            const savedLineOfMusicList = document.getElementById('savedLineOfMusicList');
+            
+            // Clear previous list
+            savedLineOfMusicList.innerHTML = '';
+            
+            if (Object.keys(savedLines).length === 0) {
+                savedLineOfMusicList.innerHTML = '<p>No saved lines of music found.</p>';
+            } else {
+                // Create a button for each saved line
+                Object.values(savedLines).forEach(line => {
+                    const lineButton = document.createElement('button');
+                    lineButton.textContent = `${line.name} (Saved: ${new Date(line.timestamp).toLocaleString()})`;
+                    lineButton.style.display = 'block';
+                    lineButton.style.width = '100%';
+                    lineButton.style.marginBottom = '10px';
+                    lineButton.style.backgroundColor = '#555';
+                    lineButton.style.color = 'white';
+                    lineButton.style.border = 'none';
+                    lineButton.style.padding = '10px';
+                    lineButton.style.borderRadius = '5px';
+                    
+                    lineButton.addEventListener('click', () => {
+                        // Load the selected line of music
+                        const gridData = JSON.parse(line.grid);
+                        grid.setData(gridData);
+                        
+                        // Update the line name
+                        document.getElementById('lineOfMusicName').textContent = line.name;
+                        
+                        // Close the modal
+                        document.getElementById('loadLineOfMusicModal').style.display = 'none';
+                    });
+                    
+                    savedLineOfMusicList.appendChild(lineButton);
+                });
+            }
+            
+            // Show the modal
+            document.getElementById('loadLineOfMusicModal').style.display = 'flex';
+        });
+
+        // Close load modal button
+        document.getElementById('closeLoadModal').addEventListener('click', function() {
+            document.getElementById('loadLineOfMusicModal').style.display = 'none';
+        });
+    </script>
     <script src="beatmaker.js"></script>
 </body>
 </html>
