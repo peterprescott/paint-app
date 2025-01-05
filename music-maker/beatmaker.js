@@ -53,109 +53,6 @@ const customSoundState = {
     }
 };
 
-// Grid Configuration
-const ROWS = 12;  // 3 drums, 3 bass, 3 synth, 3 custom
-const COLS = 16; // 16 bars
-let grid = Array(ROWS).fill().map(() => Array(COLS).fill(null));
-let currentColumn = 0;
-let isPlaying = false;
-let selectedInstrument = null;
-
-// Add getData method to grid
-grid.getData = function() {
-    console.log('Getting grid data...');
-    const gridData = this.map(row => 
-        row.map(cell => {
-            const cellData = {
-                active: cell !== null,
-                sound: cell ? { 
-                    type: cell.type, 
-                    key: cell.key 
-                } : null
-            };
-            return cellData;
-        })
-    );
-    console.log('Grid data:', JSON.stringify(gridData));
-    return gridData;
-};
-
-// Add setData method to grid
-grid.setData = function(data) {
-    console.log('Setting grid data:', JSON.stringify(data));
-    
-    // Validate input data matches grid dimensions
-    if (data.length !== ROWS || data[0].length !== COLS) {
-        console.error('Saved grid data does not match current grid dimensions');
-        return false;
-    }
-
-    // Clear existing grid
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-            this[row][col] = null;
-        }
-    }
-
-    // Restore grid state
-    data.forEach((rowData, rowIndex) => {
-        rowData.forEach((cellData, colIndex) => {
-            if (cellData.active) {
-                // Find the corresponding instrument
-                const instrumentType = Object.keys(sounds).find(type => 
-                    Object.keys(sounds[type]).includes(cellData.sound.key)
-                );
-                
-                if (instrumentType) {
-                    this[rowIndex][colIndex] = {
-                        type: instrumentType,
-                        key: cellData.sound.key
-                    };
-                    console.log(`Setting cell [${rowIndex}, ${colIndex}] to ${instrumentType}.${cellData.sound.key}`);
-                }
-            }
-        });
-    });
-
-    // Redraw the grid to reflect changes
-    const gridElement = document.getElementById('grid');
-    gridElement.innerHTML = ''; // Clear existing grid
-
-    for (let row = 0; row < ROWS; row++) {
-        const rowElement = document.createElement('div');
-        rowElement.classList.add('grid-row');
-        rowElement.style.display = 'flex';
-        rowElement.style.height = `${100 / ROWS}%`;
-
-        for (let col = 0; col < COLS; col++) {
-            const cellElement = document.createElement('div');
-            cellElement.classList.add('grid-cell');
-            cellElement.dataset.row = row;
-            cellElement.dataset.col = col;
-            cellElement.style.width = `${100 / COLS}%`;
-            cellElement.style.border = '1px solid #444';
-            
-            // Color the cell if it's active
-            if (this[row][col]) {
-                const instrumentType = this[row][col].type;
-                const instrumentKey = this[row][col].key;
-                cellElement.style.backgroundColor = getColor(instrumentType, instrumentKey);
-                cellElement.classList.add('active');
-            } else {
-                cellElement.style.backgroundColor = '#333';
-            }
-            
-            cellElement.addEventListener('click', handleGridCellClick);
-            
-            rowElement.appendChild(cellElement);
-        }
-        
-        gridElement.appendChild(rowElement);
-    }
-    
-    return true;
-};
-
 // Precise row mapping for each specific instrument
 const INSTRUMENT_ROWS = {
     // Drums
@@ -181,26 +78,36 @@ const INSTRUMENT_ROWS = {
 
 // Play Sounds
 function playSounds(column) {
-    // Iterate through each instrument type
-    for (let type in sounds) {
-        for (let instrumentKey in sounds[type]) {
-            // Find the correct row for this specific instrument
-            const row = INSTRUMENT_ROWS[instrumentKey];
-            
-            // Check if there's a sound in this specific row and column
-            if (grid[row] && grid[row][column]) {
-                // Play the sound
-                sounds[type][instrumentKey]();
+    // Get all lines of music
+    const linesOfMusic = document.querySelectorAll('.grid-container');
+    
+    linesOfMusic.forEach(lineContainer => {
+        // Iterate through each instrument type
+        for (let type in sounds) {
+            for (let instrumentKey in sounds[type]) {
+                // Find the correct row for this specific instrument
+                const row = INSTRUMENT_ROWS[instrumentKey];
+                
+                // Find the specific grid for this line of music
+                const grid = lineContainer.querySelector('.grid');
+                
+                // Check if there's a sound in this specific row and column
+                const cell = grid.querySelector(`.grid-cell[data-row="${row}"][data-col="${column}"]`);
+                
+                if (cell && cell.classList.contains('active')) {
+                    // Play the sound
+                    sounds[type][instrumentKey]();
+                }
             }
         }
-    }
+    });
 }
 
 // Sequencer Loop
 function sequencerLoop() {
     if (!isPlaying) return;
 
-    // Highlight current column
+    // Highlight current column across all lines of music
     const gridCells = document.querySelectorAll('.grid-cell');
     gridCells.forEach(cell => {
         if (parseInt(cell.dataset.col) === currentColumn) {
@@ -210,14 +117,16 @@ function sequencerLoop() {
         }
     });
 
-    // Play sounds for current column
+    // Play sounds for the current column
     playSounds(currentColumn);
 
     // Move to next column
-    currentColumn = (currentColumn + 1) % COLS;
+    currentColumn = (currentColumn + 1) % 16;
 
     // Schedule next iteration
-    setTimeout(sequencerLoop, 250);  // Adjust tempo as needed
+    if (isPlaying) {
+        setTimeout(sequencerLoop, 250); // Adjust tempo as needed
+    }
 }
 
 // Event Listeners
@@ -237,122 +146,6 @@ document.getElementById('stopBtn').addEventListener('click', () => {
     gridCells.forEach(cell => {
         cell.style.opacity = '1';
     });
-});
-
-document.getElementById('grid').addEventListener('click', (event) => {
-    console.log('Grid clicked - isPlaying:', isPlaying, 'selectedInstrument:', selectedInstrument);
-    
-    // // Explicitly prevent editing when playing
-    // if (isPlaying) {
-    //     console.log('Editing blocked - sequencer is playing');
-    //     return;
-    // }
-    
-    if (!selectedInstrument) {
-        console.log('No instrument selected');
-        return;
-    }
-    
-    const cell = event.target.closest('.grid-cell');
-    if (cell) {
-        const col = parseInt(cell.dataset.col);
-        
-        // Precise row mapping for each specific instrument
-        const rowMap = {
-            // Drums
-            'kick': 0,
-            'snare': 1,
-            'hihat': 2,
-            
-            // Bass
-            'lowBass': 3,
-            'midBass': 4,
-            'highBass': 5,
-            
-            // Synth
-            'chord1': 6,
-            'chord2': 7,
-            'lead': 8,
-            
-            // Custom
-            '1': 9,
-            '2': 10,
-            '3': 11
-        };
-        
-        // Get the correct row for the selected instrument
-        const correctRow = rowMap[selectedInstrument.key];
-        
-        // Find the specific cell in the correct row for this column
-        const gridCells = document.querySelectorAll('.grid-cell');
-        gridCells.forEach(gridCell => {
-            const cellRow = parseInt(gridCell.dataset.row);
-            const cellCol = parseInt(gridCell.dataset.col);
-            
-            if (cellRow === correctRow && cellCol === col) {
-                // Toggle cell state
-                if (grid[correctRow][col]) {
-                    grid[correctRow][col] = null;
-                    gridCell.style.backgroundColor = '#333';
-                } else {
-                    grid[correctRow][col] = selectedInstrument;
-                    gridCell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
-                }
-            }
-        });
-    }
-});
-
-document.getElementById('grid').addEventListener('mouseover', (event) => {
-    // Only show hover effect when not playing and an instrument is selected
-    if (!isPlaying && selectedInstrument) {
-        const hoveredCell = event.target.closest('.grid-cell');
-        if (hoveredCell) {
-            const col = parseInt(hoveredCell.dataset.col);
-            
-            // Precise row mapping for each specific instrument
-            const rowMap = {
-                // Drums
-                'kick': 0,
-                'snare': 1,
-                'hihat': 2,
-                
-                // Bass
-                'lowBass': 3,
-                'midBass': 4,
-                'highBass': 5,
-                
-                // Synth
-                'chord1': 6,
-                'chord2': 7,
-                'lead': 8,
-                
-                // Custom
-                '1': 9,
-                '2': 10,
-                '3': 11
-            };
-            
-            // Get the correct row for the selected instrument
-            const correctRow = rowMap[selectedInstrument.key];
-            
-            // Reset all cell borders
-            const gridCells = document.querySelectorAll('.grid-cell');
-            gridCells.forEach(cell => {
-                cell.style.border = '1px solid #444';
-            });
-            
-            // Find and highlight the cell in the correct row and hovered column
-            gridCells.forEach(cell => {
-                const cellRow = parseInt(cell.dataset.row);
-                const cellCol = parseInt(cell.dataset.col);
-                
-                if (cellRow === correctRow && cellCol === col) {
-                    cell.style.border = '2px solid white';
-                }
-            });
-        }
-    }
 });
 
 document.querySelectorAll('.instrument button').forEach(button => {
@@ -646,7 +439,12 @@ window.addEventListener('load', () => {
 });
 
 // Initialize on page load
-window.addEventListener('load', initializeGrid);
+window.addEventListener('load', () => {
+    // Initialize variables
+    let isPlaying = false;
+    let currentColumn = 0;
+    let selectedInstrument = null;
+});
 
 // Volume Control
 document.getElementById('volumeSlider').addEventListener('input', (event) => {
@@ -654,51 +452,254 @@ document.getElementById('volumeSlider').addEventListener('input', (event) => {
     masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
 });
 
-// Initialize Grid
-function initializeGrid() {
-    const gridElement = document.getElementById('grid');
-    gridElement.innerHTML = '';
+// LineOfMusic class
+class LineOfMusic {
+    constructor(options = {}) {
+        // Default options
+        this.options = {
+            name: `Rhythmora ${LineOfMusic.instanceCount + 1}`,
+            gridRows: 12,  // Explicitly set to 12 rows
+            gridCols: 16,  // Explicitly set to 16 columns
+            ...options
+        };
 
-    for (let row = 0; row < ROWS; row++) {
-        const rowElement = document.createElement('div');
-        rowElement.classList.add('grid-row');
-        rowElement.style.display = 'flex';
-        rowElement.style.height = `${100 / ROWS}%`;
+        // Increment instance count
+        LineOfMusic.instanceCount++;
 
-        for (let col = 0; col < COLS; col++) {
-            const cellElement = document.createElement('div');
-            cellElement.classList.add('grid-cell');
-            cellElement.dataset.row = row;
-            cellElement.dataset.col = col;
-            cellElement.style.width = `${100 / COLS}%`;
-            cellElement.style.border = '1px solid #444';
-            cellElement.style.backgroundColor = '#333';
+        // Initialize grid data
+        this.gridData = Array(this.options.gridRows).fill().map(() => 
+            Array(this.options.gridCols).fill(null)
+        );
+
+        // Create the container for this line of music
+        this.container = this.createContainer();
+
+        // Create the grid for this line of music
+        this.grid = this.createGrid();
+
+        // Attach to DOM
+        this.render();
+    }
+
+    // Static property to track number of instances
+    static instanceCount = 0;
+
+    createContainer() {
+        const container = document.createElement('div');
+        container.classList.add('grid-container');
+        container.id = `lineOfMusic-${LineOfMusic.instanceCount}`;
+
+        return container;
+    }
+
+    createControls() {
+        const controlsDiv = document.createElement('div');
+        controlsDiv.classList.add('lineOfMusic-controls');
+
+        // Save button
+        const saveBtn = this.createButton(' Save', () => this.save());
+
+        // Load button
+        const loadBtn = this.createButton(' Load', () => this.load());
+
+        // Name div
+        const nameDiv = document.createElement('div');
+        nameDiv.id = `lineOfMusicName-${LineOfMusic.instanceCount}`;
+        nameDiv.contentEditable = 'false';
+        nameDiv.textContent = this.options.name;
+        nameDiv.addEventListener('click', () => {
+            nameDiv.contentEditable = nameDiv.contentEditable === 'true' ? 'false' : 'true';
+            nameDiv.focus();
+        });
+
+        // Delete button
+        const deleteBtn = this.createButton(' Delete', () => this.delete(), 'delete');
+
+        // Append buttons to controls
+        [saveBtn, loadBtn, nameDiv, deleteBtn].forEach(el => 
+            controlsDiv.appendChild(el)
+        );
+
+        return controlsDiv;
+    }
+
+    createButton(text, clickHandler, extraClass = '') {
+        const btn = document.createElement('button');
+        btn.classList.add('lineOfMusic-btn');
+        if (extraClass) btn.classList.add(extraClass);
+        btn.textContent = text;
+        btn.addEventListener('click', clickHandler);
+        return btn;
+    }
+
+    createGrid() {
+        const gridDiv = document.createElement('div');
+        gridDiv.id = `grid-${LineOfMusic.instanceCount}`;
+        gridDiv.classList.add('grid');
+
+        // Create grid cells
+        for (let row = 0; row < this.options.gridRows; row++) {
+            const rowElement = document.createElement('div');
+            rowElement.classList.add('grid-row');
+
+            for (let col = 0; col < this.options.gridCols; col++) {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('grid-cell');
+                cellElement.dataset.row = row;
+                cellElement.dataset.col = col;
+                
+                cellElement.addEventListener('click', (event) => this.handleCellClick(event));
+                
+                rowElement.appendChild(cellElement);
+            }
             
-            cellElement.addEventListener('click', handleGridCellClick);
-            
-            rowElement.appendChild(cellElement);
+            gridDiv.appendChild(rowElement);
+        }
+
+        return gridDiv;
+    }
+
+    handleCellClick(event) {
+        // Ensure an instrument is selected
+        if (!selectedInstrument) {
+            console.warn('No instrument selected');
+            return;
+        }
+
+        const cell = event.target;
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+
+        // Check if the cell is already active for this instrument
+        const currentCellData = this.gridData[row][col];
+        
+        if (currentCellData && 
+            currentCellData.type === selectedInstrument.type && 
+            currentCellData.key === selectedInstrument.key) {
+            // If the same instrument is already in the cell, remove it
+            this.gridData[row][col] = null;
+            cell.classList.remove('active');
+            cell.style.backgroundColor = '#333';
+        } else {
+            // Set the cell to the selected instrument
+            this.gridData[row][col] = selectedInstrument;
+            cell.classList.add('active');
+            cell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
+        }
+    }
+
+    save() {
+        const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+        const name = this.container.querySelector('[id^="lineOfMusicName"]').textContent;
+
+        savedLines[name] = {
+            name: name,
+            grid: JSON.stringify(this.gridData),
+            timestamp: new Date().toISOString()
+        };
+
+        localStorage.setItem('savedLineOfMusic', JSON.stringify(savedLines));
+        alert(`Saved "${name}" to localStorage`);
+    }
+
+    load() {
+        const savedLines = JSON.parse(localStorage.getItem('savedLineOfMusic') || '{}');
+        const savedLineOfMusicList = document.getElementById('savedLineOfMusicList');
+        
+        savedLineOfMusicList.innerHTML = '';
+        
+        if (Object.keys(savedLines).length === 0) {
+            savedLineOfMusicList.innerHTML = '<p>No saved lines of music found.</p>';
+        } else {
+            Object.values(savedLines).forEach(line => {
+                const lineButton = document.createElement('button');
+                lineButton.textContent = `${line.name} (Saved: ${new Date(line.timestamp).toLocaleString()})`;
+                lineButton.style.display = 'block';
+                lineButton.style.width = '100%';
+                lineButton.style.marginBottom = '10px';
+                lineButton.style.backgroundColor = '#555';
+                lineButton.style.color = 'white';
+                lineButton.style.border = 'none';
+                lineButton.style.padding = '10px';
+                lineButton.style.borderRadius = '5px';
+                
+                lineButton.addEventListener('click', () => {
+                    const gridData = JSON.parse(line.grid);
+                    this.loadGridData(gridData, line.name);
+                    document.getElementById('loadLineOfMusicModal').style.display = 'none';
+                });
+                
+                savedLineOfMusicList.appendChild(lineButton);
+            });
         }
         
-        gridElement.appendChild(rowElement);
+        document.getElementById('loadLineOfMusicModal').style.display = 'flex';
     }
-}
 
-// Select Instrument
-function selectInstrument(instrumentKey) {
-    // Find the instrument type and key
-    for (let type in sounds) {
-        if (sounds[type][instrumentKey]) {
-            selectedInstrument = { type, key: instrumentKey };
-            break;
+    loadGridData(gridData, name) {
+        // Update grid data
+        this.gridData = gridData;
+
+        // Update grid display
+        const cells = this.grid.querySelectorAll('.grid-cell');
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / this.options.gridCols);
+            const col = index % this.options.gridCols;
+            
+            const cellData = gridData[row][col];
+            
+            if (cellData) {
+                cell.style.backgroundColor = getColor(cellData.type, cellData.key);
+                cell.classList.add('active');
+            } else {
+                cell.style.backgroundColor = '#333';
+                cell.classList.remove('active');
+            }
+        });
+
+        // Update name
+        this.container.querySelector('[id^="lineOfMusicName"]').textContent = name;
+    }
+
+    delete() {
+        // Prevent deleting if it's the last line of music
+        const linesOfMusicContainer = this.container.parentElement;
+        if (linesOfMusicContainer.children.length > 1) {
+            this.container.remove();
+        } else {
+            alert('Cannot delete the last line of music');
         }
     }
+
+    render() {
+        // Clear previous contents
+        this.container.innerHTML = '';
+
+        // Add controls
+        const controls = this.createControls();
+        this.container.appendChild(controls);
+
+        // Add grid
+        this.container.appendChild(this.grid);
+
+        // Add to DOM
+        const linesOfMusicContainer = document.getElementById('linesOfMusicContainer') || 
+            this.createLinesOfMusicContainer();
+        linesOfMusicContainer.appendChild(this.container);
+    }
+
+    createLinesOfMusicContainer() {
+        const container = document.createElement('div');
+        container.id = 'linesOfMusicContainer';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '20px';
+        document.body.appendChild(container);
+        return container;
+    }
 }
 
-// Handle Grid Cell Click
-function handleGridCellClick(event) {
-    if (!isPlaying || !selectedInstrument) return;
-
-    const row = parseInt(event.target.dataset.row);
-    const col = parseInt(event.target.dataset.col);
-
-}
+// Create the initial line of music when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new LineOfMusic();
+});
