@@ -820,9 +820,9 @@ class LineOfMusic {
         nameContainer.appendChild(editButton);
 
         // Button container (right-aligned)
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.gap = '10px';
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.style.display = 'flex';
+        buttonsContainer.style.gap = '5px';
 
         // Save button (Solarized blue)
         const saveBtn = this.createButton(' Save', () => this.save());
@@ -836,17 +836,32 @@ class LineOfMusic {
         loadBtn.style.color = 'white';
 
         // Delete button
-        const deleteBtn = this.createButton(' Delete', () => this.delete(), 'delete');
+        const deleteButton = this.createButton(' Delete️', () => this.delete(), 'delete-btn');
+        deleteButton.style.backgroundColor = '#dc322f';  // Solarized red
+        deleteButton.style.color = 'white';
+
+        // Toggle Grid Visibility button
+        const toggleGridButton = this.createButton('Toggle Grid Visibility', () => {
+            const grid = this.grid;
+            if (grid.style.display === 'none') {
+                grid.style.display = 'block';
+            } else {
+                grid.style.display = 'none';
+            }
+        }, 'toggle-grid-btn');
+        toggleGridButton.style.backgroundColor = '#d33682';  // Solarized magenta/purple
+        toggleGridButton.style.color = 'white';
 
         // Append buttons to container
-        [saveBtn, loadBtn, deleteBtn].forEach(el => 
-            buttonContainer.appendChild(el)
-        );
+        buttonsContainer.appendChild(saveBtn);
+        buttonsContainer.appendChild(loadBtn);
+        buttonsContainer.appendChild(deleteButton);
+        buttonsContainer.appendChild(toggleGridButton);
 
-        // Append name container, status div, and button container to controls
+        // Append name container, status div, and button container
         controlsDiv.appendChild(nameContainer);
         controlsDiv.appendChild(statusDiv);
-        controlsDiv.appendChild(buttonContainer);
+        controlsDiv.appendChild(buttonsContainer);
 
         return controlsDiv;
     }
