@@ -28,6 +28,31 @@ const sounds = {
     }
 };
 
+// Custom Sound State Management
+const customSoundState = {
+    1: {
+        name: 'Custom 1',
+        color: '#FF6B6B',
+        frequency: 440,
+        amplitude: 5,
+        waveType: 'sine'
+    },
+    2: {
+        name: 'Custom 2', 
+        color: '#4ECDC4',
+        frequency: 440,
+        amplitude: 5,
+        waveType: 'sine'
+    },
+    3: {
+        name: 'Custom 3',
+        color: '#45B7D1',
+        frequency: 440,
+        amplitude: 5,
+        waveType: 'sine'
+    }
+};
+
 // Grid Configuration
 const ROWS = 12;  // 3 drums, 3 bass, 3 synth, 3 custom
 const COLS = 16; // 16 bars
@@ -225,7 +250,7 @@ document.getElementById('grid').addEventListener('click', (event) => {
                     gridCell.style.backgroundColor = '#333';
                 } else {
                     grid[correctRow][col] = selectedInstrument;
-                    gridCell.style.backgroundColor = getColorForInstrument(selectedInstrument.type, selectedInstrument.key);
+                    gridCell.style.backgroundColor = getColor(selectedInstrument.type, selectedInstrument.key);
                 }
             }
         });
@@ -297,7 +322,7 @@ document.querySelectorAll('.instrument button').forEach(button => {
                 selectedInstrument = { type, key: instrumentKey };
                 
                 // Update button color
-                this.style.backgroundColor = getColorForInstrument(type, instrumentKey);
+                this.style.backgroundColor = getColor(type, instrumentKey);
                 
                 break;
             }
@@ -380,53 +405,52 @@ function createChordSound(frequencies, duration) {
     };
 }
 
-function getColorForInstrument(type, key) {
-    const colors = {
-        // Drums: Muted reds
-        'drums': {
-            'kick': '#8B0000',     // Deep Dark Red
-            'snare': '#cb4b16',    // Solarized orange
-            'hihat': '#b58900'     // Solarized yellow
-        },
-        
-        // Bass: Muted greens
-        'bass': {
-            'lowBass': '#859900',  // Solarized green
-            'midBass': '#2aa198',  // Solarized cyan
-            'highBass': '#268bd2'  // Solarized blue
-        },
-        
-        // Synth: Muted purples/blues
-        'synth': {
-            'chord1': '#6c71c4',   // Solarized violet
-            'chord2': '#d33682',   // Solarized magenta
-            'lead': '#93a1a1'      // Solarized base1 (muted gray)
-        },
-        
-        // Custom
-        'custom': {
-            '1': '#FF6B6B',
-            '2': '#4ECDC4',
-            '3': '#45B7D1'
+// Color Mapping for Instruments
+const colors = {
+    drums: {
+        kick: '#8B0000',
+        snare: '#cb4b16',
+        hihat: '#b58900'
+    },
+    bass: {
+        lowBass: '#859900',
+        midBass: '#2aa198',
+        highBass: '#268bd2'
+    },
+    synth: {
+        chord1: '#6c71c4',
+        chord2: '#d33682',
+        lead: '#93a1a1'
+    },
+    custom: {
+        1: '#FF6B6B',
+        2: '#4ECDC4',
+        3: '#45B7D1'
+    }
+};
+
+// Get color for a specific instrument
+function getColor(type, key) {
+    // First check if the color exists in the custom sound state
+    if (type === 'custom') {
+        const customState = customSoundState[key];
+        if (customState && customState.color) {
+            return customState.color;
         }
-    };
+    }
     
+    // Fallback to default colors
     return (colors[type] && colors[type][key]) || '#FFFFFF';
 }
 
-// Initialize on page load
-window.addEventListener('load', initializeGrid);
-
-// Volume Control
-document.getElementById('volumeSlider').addEventListener('input', (event) => {
-    const volume = parseFloat(event.target.value);
-    masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-});
+// Alias for backward compatibility
+function getColorForInstrument(type, key) {
+    return getColor(type, key);
+}
 
 // Add event listeners for custom sound modal
 window.addEventListener('load', () => {
     let currentCustomInstrument = null;
-    let currentCustomSound = null;
     
     // Frequency slider live update
     const frequencySlider = document.getElementById('customFrequency');
@@ -444,10 +468,26 @@ window.addEventListener('load', () => {
     
     // Custom instrument buttons
     const customButtons = document.querySelectorAll('#custom button');
-    customButtons.forEach(button => {
+    customButtons.forEach((button, index) => {
         button.addEventListener('click', () => {
-            currentCustomInstrument = button.textContent.split(' ')[1];
+            // Use index + 1 to match the custom instrument numbering
+            currentCustomInstrument = index + 1;
             const modal = document.getElementById('customSoundModal');
+            
+            // Populate modal with existing state
+            const state = customSoundState[currentCustomInstrument];
+            
+            document.getElementById('customName').value = state.name;
+            document.getElementById('customColor').value = state.color;
+            
+            frequencySlider.value = state.frequency;
+            frequencyValue.textContent = `${state.frequency} Hz`;
+            
+            amplitudeSlider.value = state.amplitude;
+            amplitudeValue.textContent = state.amplitude;
+            
+            document.getElementById('customWaveType').value = state.waveType;
+            
             modal.style.display = 'flex';
         });
     });
@@ -459,11 +499,11 @@ window.addEventListener('load', () => {
         const waveType = document.getElementById('customWaveType').value;
         
         // Create a temporary sound to play
-        currentCustomSound = createCustomOscillatorSound(frequency, 3.0, waveType, amplitude);
+        const tempSound = createCustomOscillatorSound(frequency, 3.0, waveType, amplitude);
         
         // Play the sound
-        if (currentCustomSound) {
-            currentCustomSound();
+        if (tempSound) {
+            tempSound();
         }
     });
     
@@ -489,9 +529,47 @@ window.addEventListener('load', () => {
     
     // Save custom sound
     document.getElementById('saveCustomSound').addEventListener('click', () => {
+        console.log('Save button clicked');
+        console.log('Current Custom Instrument:', currentCustomInstrument);
+        
         const frequency = parseFloat(frequencySlider.value);
         const amplitude = parseFloat(amplitudeSlider.value);
         const waveType = document.getElementById('customWaveType').value;
+        const customName = document.getElementById('customName').value;
+        const customColor = document.getElementById('customColor').value;
+        
+        console.log('Frequency:', frequency);
+        console.log('Amplitude:', amplitude);
+        console.log('Wave Type:', waveType);
+        console.log('Custom Name:', customName);
+        console.log('Custom Color:', customColor);
+        
+        // Verify currentCustomInstrument is defined
+        if (!currentCustomInstrument) {
+            console.error('No custom instrument selected');
+            return;
+        }
+        
+        // Update custom sound state
+        customSoundState[currentCustomInstrument] = {
+            name: customName,
+            color: customColor,
+            frequency,
+            amplitude,
+            waveType
+        };
+        
+        // Update button text and color
+        const customButton = document.querySelector(`#custom button:nth-of-type(${currentCustomInstrument})`);
+        
+        if (!customButton) {
+            console.error('Custom button not found');
+            console.log('All custom buttons:', document.querySelectorAll('#custom button'));
+            return;
+        }
+        
+        customButton.textContent = customName;
+        customButton.style.backgroundColor = customColor;
         
         // Create and save the new sound
         sounds.custom[currentCustomInstrument] = () => {
@@ -519,4 +597,13 @@ window.addEventListener('load', () => {
     document.getElementById('cancelCustomSound').addEventListener('click', () => {
         document.getElementById('customSoundModal').style.display = 'none';
     });
+});
+
+// Initialize on page load
+window.addEventListener('load', initializeGrid);
+
+// Volume Control
+document.getElementById('volumeSlider').addEventListener('input', (event) => {
+    const volume = parseFloat(event.target.value);
+    masterGainNode.gain.setValueAtTime(volume, audioContext.currentTime);
 });
