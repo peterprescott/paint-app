@@ -207,10 +207,57 @@ document.getElementById('grid').addEventListener('click', (event) => {
                     gridCell.style.backgroundColor = '#333';
                 } else {
                     grid[correctRow][col] = selectedInstrument;
-                    gridCell.style.backgroundColor = getColorForInstrument(selectedInstrument.type);
+                    gridCell.style.backgroundColor = getColorForInstrument(selectedInstrument.type, selectedInstrument.key);
                 }
             }
         });
+    }
+});
+
+document.getElementById('grid').addEventListener('mouseover', (event) => {
+    // Only show hover effect when not playing and an instrument is selected
+    if (!isPlaying && selectedInstrument) {
+        const hoveredCell = event.target.closest('.grid-cell');
+        if (hoveredCell) {
+            const col = parseInt(hoveredCell.dataset.col);
+            
+            // Precise row mapping for each specific instrument
+            const rowMap = {
+                // Drums
+                'kick': 0,
+                'snare': 1,
+                'hihat': 2,
+                
+                // Bass
+                'lowBass': 3,
+                'midBass': 4,
+                'highBass': 5,
+                
+                // Synth
+                'chord1': 6,
+                'chord2': 7,
+                'lead': 8
+            };
+            
+            // Get the correct row for the selected instrument
+            const correctRow = rowMap[selectedInstrument.key];
+            
+            // Reset all cell borders
+            const gridCells = document.querySelectorAll('.grid-cell');
+            gridCells.forEach(cell => {
+                cell.style.border = '1px solid #444';
+            });
+            
+            // Find and highlight the cell in the correct row and hovered column
+            gridCells.forEach(cell => {
+                const cellRow = parseInt(cell.dataset.row);
+                const cellCol = parseInt(cell.dataset.col);
+                
+                if (cellRow === correctRow && cellCol === col) {
+                    cell.style.border = '2px solid white';
+                }
+            });
+        }
     }
 });
 
@@ -226,6 +273,9 @@ document.querySelectorAll('.instrument button').forEach(button => {
                 // Update selected instrument
                 selectedInstrument = { type, key: instrumentKey };
                 
+                // Update button color
+                this.style.backgroundColor = getColorForInstrument(type, instrumentKey);
+                
                 break;
             }
         }
@@ -235,9 +285,8 @@ document.querySelectorAll('.instrument button').forEach(button => {
 // Add CSS for hover effect
 const styleElement = document.createElement('style');
 styleElement.textContent = `
-.grid-cell:hover {
-    border: 2px solid white !important;
-    cursor: pointer;
+.grid-cell {
+    transition: border 0.1s ease-in-out;
 }
 `;
 document.head.appendChild(styleElement);
@@ -308,13 +357,31 @@ function createChordSound(frequencies, duration) {
     };
 }
 
-function getColorForInstrument(type) {
+function getColorForInstrument(type, key) {
     const colors = {
-        'drums': '#FF6B6B',
-        'bass': '#4ECDC4',
-        'synth': '#45B7D1'
+        // Drums: Shades of red
+        'drums': {
+            'kick': '#8B0000',     // Dark Red
+            'snare': '#B22222',    // Firebrick Red
+            'hihat': '#FF69B4'     // Hot Pink
+        },
+        
+        // Bass: Shades of green
+        'bass': {
+            'lowBass': '#006400',  // Dark Green
+            'midBass': '#008000',  // Green
+            'highBass': '#00FF00'  // Lime Green
+        },
+        
+        // Synth: Shades of blue
+        'synth': {
+            'chord1': '#00008B',   // Dark Blue
+            'chord2': '#0000FF',   // Blue
+            'lead': '#1E90FF'      // Dodger Blue
+        }
     };
-    return colors[type] || '#FFFFFF';
+    
+    return (colors[type] && colors[type][key]) || '#FFFFFF';
 }
 
 // Initialize on page load

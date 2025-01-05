@@ -51,36 +51,56 @@
             background-color: #2e2e2e;
             margin-top: 20px;
         }
+        .control-btn {
+            background-color: white;
+            border: 3px solid black;
+            color: black;
+            font-size: 24px;
+            width: 50px;
+            height: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 10px;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .control-btn:hover {
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
     <h1>Beat Maker</h1>
     
     <div class="controls">
-        <button id="playBtn">Play</button>
-        <button id="stopBtn">Stop</button>
+        <button id="playBtn" class="control-btn play-btn">▶</button>
+        <button id="stopBtn" class="control-btn stop-btn">◼</button>
     </div>
     
     <div class="instrument-section">
         <div class="instrument" id="drums">
             <h2>Drums</h2>
-            <button onclick="selectInstrument('kick')">Kick</button>
-            <button onclick="selectInstrument('snare')">Snare</button>
-            <button onclick="selectInstrument('hihat')">Hi-Hat</button>
+            <button onclick="selectInstrument('kick')" style="background-color: #8B0000;">Kick</button>
+            <button onclick="selectInstrument('snare')" style="background-color: #B22222;">Snare</button>
+            <button onclick="selectInstrument('hihat')" style="background-color: #FF69B4;">Hi-Hat</button>
         </div>
         
         <div class="instrument" id="bass">
             <h2>Bass</h2>
-            <button onclick="selectInstrument('lowBass')">Low Bass</button>
-            <button onclick="selectInstrument('midBass')">Mid Bass</button>
-            <button onclick="selectInstrument('highBass')">High Bass</button>
+            <button onclick="selectInstrument('lowBass')" style="background-color: #006400;">Low Bass</button>
+            <button onclick="selectInstrument('midBass')" style="background-color: #008000;">Mid Bass</button>
+            <button onclick="selectInstrument('highBass')" style="background-color: #00FF00;">High Bass</button>
         </div>
         
         <div class="instrument" id="synth">
             <h2>Synth</h2>
-            <button onclick="selectInstrument('chord1')">Chord 1</button>
-            <button onclick="selectInstrument('chord2')">Chord 2</button>
-            <button onclick="selectInstrument('lead')">Lead</button>
+            <button onclick="selectInstrument('chord1')" style="background-color: #00008B;">Chord 1</button>
+            <button onclick="selectInstrument('chord2')" style="background-color: #0000FF;">Chord 2</button>
+            <button onclick="selectInstrument('lead')" style="background-color: #1E90FF;">Lead</button>
         </div>
     </div>
 
