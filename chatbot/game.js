@@ -46,18 +46,22 @@ function handleInput(event) {
     let newX = gameState.player.x;
     let newY = gameState.player.y;
 
-    // Basic Vim movement keys
+    // Support both Vim keys and arrow keys
     switch (key) {
-        case 'k':  // up
+        case 'k':        // up
+        case 'arrowup':
             newY--;
             break;
-        case 'j':  // down
+        case 'j':        // down
+        case 'arrowdown':
             newY++;
             break;
-        case 'h':  // left
+        case 'h':        // left
+        case 'arrowleft':
             newX--;
             break;
-        case 'l':  // right
+        case 'l':        // right
+        case 'arrowright':
             newX++;
             break;
     }
