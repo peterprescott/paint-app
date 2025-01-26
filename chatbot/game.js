@@ -3,6 +3,7 @@ const TILE_SIZE = 32;
 const PLAYER_COLOR = '#fff';
 const WALL_COLOR = '#666';
 const NPC_COLOR = '#ff0';
+const NPC2_COLOR = '#00f';
 const NPC_MOVE_INTERVAL = 500; // NPC moves every 500ms
 
 // Game state
@@ -16,6 +17,14 @@ const gameState = {
         x: 15,
         y: 10,
         size: TILE_SIZE - 4
+    },
+    npc2: {
+        x: 10,
+        y: 10,
+        size: TILE_SIZE - 4,
+        messageIndex: 0,
+        messages: ['Bonjour!', 'How are you?', 'Where are you going?'],
+        inRange: false  // Add flag to track if player is in range
     },
     map: [],
     canvas: null,
@@ -38,15 +47,19 @@ function init() {
         for (let x = 0; x < 20; x++) {
             // Create walls around the edges and some random walls
             gameState.map[y][x] = (x === 0 || x === 19 || y === 0 || y === 14 || 
-                                 (Math.random() < 0.2 && x !== 5 && y !== 5 && x !== 15 && y !== 10)) ? 1 : 0;
+                                 (Math.random() < 0.2 && x !== 5 && y !== 5 && 
+                                  x !== 15 && y !== 10 && x !== 10 && y !== 10)) ? 1 : 0;
         }
     }
 
     // Set up event listeners
     window.addEventListener('keydown', handleInput);
 
-    // Start NPC movement
-    setInterval(moveNPC, NPC_MOVE_INTERVAL);
+    // Start NPC movements
+    setInterval(() => {
+        moveNPC(gameState.npc);
+        moveNPC(gameState.npc2);
+    }, NPC_MOVE_INTERVAL);
 
     // Start game loop
     gameLoop();
@@ -87,7 +100,7 @@ function handleInput(event) {
 }
 
 // Move NPC randomly
-function moveNPC() {
+function moveNPC(npc) {
     const directions = [
         { dx: 0, dy: -1 },  // up
         { dx: 0, dy: 1 },   // down
@@ -103,28 +116,44 @@ function moveNPC() {
 
     // Try each direction until we find a valid move
     for (const dir of directions) {
-        const newX = gameState.npc.x + dir.dx;
-        const newY = gameState.npc.y + dir.dy;
+        const newX = npc.x + dir.dx;
+        const newY = npc.y + dir.dy;
 
         if (newX >= 0 && newX < 20 && newY >= 0 && newY < 15 && 
             gameState.map[newY][newX] === 0) {
-            gameState.npc.x = newX;
-            gameState.npc.y = newY;
+            npc.x = newX;
+            npc.y = newY;
             break;
         }
     }
 }
 
-// Check distance between player and NPC
+// Check distance between player and NPCs
 function checkProximity() {
-    const dx = gameState.player.x - gameState.npc.x;
-    const dy = gameState.player.y - gameState.npc.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Check first NPC (yellow)
+    const dx1 = gameState.player.x - gameState.npc.x;
+    const dy1 = gameState.player.y - gameState.npc.y;
+    const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
 
-    if (distance <= 3) {
-        gameState.statusBar.textContent = 'Hello';
+    // Check second NPC (blue)
+    const dx2 = gameState.player.x - gameState.npc2.x;
+    const dy2 = gameState.player.y - gameState.npc2.y;
+    const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+    if (distance2 <= 3) {
+        if (!gameState.npc2.inRange) {
+            // Only cycle message when entering range
+            gameState.npc2.messageIndex = (gameState.npc2.messageIndex + 1) % gameState.npc2.messages.length;
+            gameState.npc2.inRange = true;
+        }
+        gameState.statusBar.textContent = gameState.npc2.messages[gameState.npc2.messageIndex];
     } else {
-        gameState.statusBar.textContent = '';
+        gameState.npc2.inRange = false;
+        if (distance1 <= 3) {
+            gameState.statusBar.textContent = 'Hello';
+        } else {
+            gameState.statusBar.textContent = '';
+        }
     }
 }
 
@@ -158,13 +187,22 @@ function gameLoop() {
         gameState.player.size
     );
 
-    // Draw NPC
+    // Draw first NPC (yellow)
     gameState.ctx.fillStyle = NPC_COLOR;
     gameState.ctx.fillRect(
         gameState.npc.x * TILE_SIZE + 2,
         gameState.npc.y * TILE_SIZE + 2,
         gameState.npc.size,
         gameState.npc.size
+    );
+
+    // Draw second NPC (blue)
+    gameState.ctx.fillStyle = NPC2_COLOR;
+    gameState.ctx.fillRect(
+        gameState.npc2.x * TILE_SIZE + 2,
+        gameState.npc2.y * TILE_SIZE + 2,
+        gameState.npc2.size,
+        gameState.npc2.size
     );
 
     // Check proximity and update status
