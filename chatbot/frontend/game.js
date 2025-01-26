@@ -5,6 +5,7 @@ const WALL_COLOR = '#666';
 const NPC_COLOR = '#ff0';
 const NPC2_COLOR = '#00f';
 const NPC_MOVE_INTERVAL = 500; // NPC moves every 500ms
+const API_URL = 'http://localhost:5000/api';
 
 // Game state
 const gameState = {
@@ -16,7 +17,8 @@ const gameState = {
     npc: {
         x: 15,
         y: 10,
-        size: TILE_SIZE - 4
+        size: TILE_SIZE - 4,
+        inRange: false
     },
     npc2: {
         x: 10,
@@ -24,16 +26,21 @@ const gameState = {
         size: TILE_SIZE - 4,
         messageIndex: 0,
         messages: ['Bonjour!', 'How are you?', 'Where are you going?'],
-        inRange: false  // Add flag to track if player is in range
+        inRange: false
     },
-    map: [],
+    map: {
+        tiles: {},
+        width: 20,
+        height: 15,
+        walkablePositions: new Set()
+    },
     canvas: null,
     ctx: null,
     statusBar: null
 };
 
 // Initialize the game
-function init() {
+async function init() {
     // Set up canvas
     gameState.canvas = document.getElementById('gameCanvas');
     gameState.canvas.width = 20 * TILE_SIZE;
@@ -41,15 +48,40 @@ function init() {
     gameState.ctx = gameState.canvas.getContext('2d');
     gameState.statusBar = document.getElementById('statusBar');
 
-    // Generate simple map (0 = floor, 1 = wall)
-    for (let y = 0; y < 15; y++) {
-        gameState.map[y] = [];
-        for (let x = 0; x < 20; x++) {
-            // Create walls around the edges and some random walls
-            gameState.map[y][x] = (x === 0 || x === 19 || y === 0 || y === 14 || 
-                                 (Math.random() < 0.2 && x !== 5 && y !== 5 && 
-                                  x !== 15 && y !== 10 && x !== 10 && y !== 10)) ? 1 : 0;
+    // Fetch map from backend
+    try {
+        const response = await fetch(`${API_URL}/map`);
+        const mapData = await response.json();
+        gameState.map.width = mapData.width;
+        gameState.map.height = mapData.height;
+        
+        // Convert tiles to game state format
+        for (const [pos, tile] of Object.entries(mapData.tiles)) {
+            const [x, y] = pos.split(',').map(Number);
+            gameState.map.tiles[`${x},${y}`] = tile;
+            if (tile.walkable) {
+                gameState.map.walkablePositions.add(`${x},${y}`);
+            }
         }
+    } catch (error) {
+        console.error('Failed to fetch map:', error);
+    }
+
+    // Initialize NPCs from backend
+    try {
+        const response = await fetch(`${API_URL}/npcs`);
+        const npcs = await response.json();
+        if (npcs.yellow_npc) {
+            gameState.npc.x = npcs.yellow_npc.position.x;
+            gameState.npc.y = npcs.yellow_npc.position.y;
+        }
+        if (npcs.blue_npc) {
+            gameState.npc2.x = npcs.blue_npc.position.x;
+            gameState.npc2.y = npcs.blue_npc.position.y;
+            gameState.npc2.messages = npcs.blue_npc.available_messages;
+        }
+    } catch (error) {
+        console.error('Failed to fetch NPCs:', error);
     }
 
     // Set up event listeners
@@ -57,8 +89,8 @@ function init() {
 
     // Start NPC movements
     setInterval(() => {
-        moveNPC(gameState.npc);
-        moveNPC(gameState.npc2);
+        moveNPC(gameState.npc, 'yellow_npc');
+        moveNPC(gameState.npc2, 'blue_npc');
     }, NPC_MOVE_INTERVAL);
 
     // Start game loop
@@ -66,7 +98,7 @@ function init() {
 }
 
 // Handle player input
-function handleInput(event) {
+async function handleInput(event) {
     const key = event.key.toLowerCase();
     let newX = gameState.player.x;
     let newY = gameState.player.y;
@@ -91,45 +123,46 @@ function handleInput(event) {
             break;
     }
 
-    // Check if the new position is valid (not a wall)
-    if (newX >= 0 && newX < 20 && newY >= 0 && newY < 15 && 
-        gameState.map[newY][newX] === 0) {
+    // Check if the new position is walkable
+    if (gameState.map.walkablePositions.has(`${newX},${newY}`)) {
         gameState.player.x = newX;
         gameState.player.y = newY;
     }
 }
 
 // Move NPC randomly
-function moveNPC(npc) {
-    const directions = [
-        { dx: 0, dy: -1 },  // up
-        { dx: 0, dy: 1 },   // down
-        { dx: -1, dy: 0 },  // left
-        { dx: 1, dy: 0 }    // right
-    ];
+async function moveNPC(npc, npcId) {
+    try {
+        // Get valid moves from backend
+        const response = await fetch(`${API_URL}/map/valid-moves?x=${npc.x}&y=${npc.y}`);
+        const data = await response.json();
+        const validMoves = data.valid_moves;
 
-    // Shuffle directions randomly
-    for (let i = directions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [directions[i], directions[j]] = [directions[j], directions[i]];
-    }
-
-    // Try each direction until we find a valid move
-    for (const dir of directions) {
-        const newX = npc.x + dir.dx;
-        const newY = npc.y + dir.dy;
-
-        if (newX >= 0 && newX < 20 && newY >= 0 && newY < 15 && 
-            gameState.map[newY][newX] === 0) {
-            npc.x = newX;
-            npc.y = newY;
-            break;
+        if (validMoves.length > 0) {
+            // Choose random valid move
+            const move = validMoves[Math.floor(Math.random() * validMoves.length)];
+            npc.x = move.x;
+            npc.y = move.y;
+            
+            // Update position in backend
+            await fetch(`${API_URL}/npc/${npcId}/move`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    x: move.x,
+                    y: move.y
+                })
+            });
         }
+    } catch (error) {
+        console.error(`Failed to move ${npcId}:`, error);
     }
 }
 
 // Check distance between player and NPCs
-function checkProximity() {
+async function checkProximity() {
     // Check first NPC (yellow)
     const dx1 = gameState.player.x - gameState.npc.x;
     const dy1 = gameState.player.y - gameState.npc.y;
@@ -142,16 +175,35 @@ function checkProximity() {
 
     if (distance2 <= 3) {
         if (!gameState.npc2.inRange) {
-            // Only cycle message when entering range
-            gameState.npc2.messageIndex = (gameState.npc2.messageIndex + 1) % gameState.npc2.messages.length;
+            // Get next message from backend
+            try {
+                const response = await fetch(`${API_URL}/npc/blue_npc/message`);
+                const data = await response.json();
+                if (data.message) {
+                    gameState.statusBar.textContent = data.message;
+                }
+            } catch (error) {
+                console.error('Failed to fetch message:', error);
+            }
             gameState.npc2.inRange = true;
         }
-        gameState.statusBar.textContent = gameState.npc2.messages[gameState.npc2.messageIndex];
     } else {
         gameState.npc2.inRange = false;
         if (distance1 <= 3) {
-            gameState.statusBar.textContent = 'Hello';
+            if (!gameState.npc.inRange) {
+                try {
+                    const response = await fetch(`${API_URL}/npc/yellow_npc/message`);
+                    const data = await response.json();
+                    if (data.message) {
+                        gameState.statusBar.textContent = data.message;
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch message:', error);
+                }
+                gameState.npc.inRange = true;
+            }
         } else {
+            gameState.npc.inRange = false;
             gameState.statusBar.textContent = '';
         }
     }
@@ -164,9 +216,10 @@ function gameLoop() {
     gameState.ctx.fillRect(0, 0, gameState.canvas.width, gameState.canvas.height);
 
     // Draw map
-    for (let y = 0; y < gameState.map.length; y++) {
-        for (let x = 0; x < gameState.map[y].length; x++) {
-            if (gameState.map[y][x] === 1) {
+    for (let y = 0; y < gameState.map.height; y++) {
+        for (let x = 0; x < gameState.map.width; x++) {
+            const tile = gameState.map.tiles[`${x},${y}`];
+            if (tile && tile.type === 'wall') {
                 gameState.ctx.fillStyle = WALL_COLOR;
                 gameState.ctx.fillRect(
                     x * TILE_SIZE,
