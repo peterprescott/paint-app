@@ -42,25 +42,22 @@ function init() {
 
 // Handle player input
 function handleInput(event) {
-    const key = event.key;
+    const key = event.key.toLowerCase();
     let newX = gameState.player.x;
     let newY = gameState.player.y;
 
+    // Basic Vim movement keys
     switch (key) {
-        case 'ArrowUp':
-        case 'w':
+        case 'k':  // up
             newY--;
             break;
-        case 'ArrowDown':
-        case 's':
+        case 'j':  // down
             newY++;
             break;
-        case 'ArrowLeft':
-        case 'a':
+        case 'h':  // left
             newX--;
             break;
-        case 'ArrowRight':
-        case 'd':
+        case 'l':  // right
             newX++;
             break;
     }
