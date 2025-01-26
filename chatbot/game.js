@@ -2,6 +2,8 @@
 const TILE_SIZE = 32;
 const PLAYER_COLOR = '#fff';
 const WALL_COLOR = '#666';
+const NPC_COLOR = '#ff0';
+const NPC_MOVE_INTERVAL = 500; // NPC moves every 500ms
 
 // Game state
 const gameState = {
@@ -10,9 +12,15 @@ const gameState = {
         y: 5,
         size: TILE_SIZE - 4
     },
+    npc: {
+        x: 15,
+        y: 10,
+        size: TILE_SIZE - 4
+    },
     map: [],
     canvas: null,
-    ctx: null
+    ctx: null,
+    statusBar: null
 };
 
 // Initialize the game
@@ -22,6 +30,7 @@ function init() {
     gameState.canvas.width = 20 * TILE_SIZE;
     gameState.canvas.height = 15 * TILE_SIZE;
     gameState.ctx = gameState.canvas.getContext('2d');
+    gameState.statusBar = document.getElementById('statusBar');
 
     // Generate simple map (0 = floor, 1 = wall)
     for (let y = 0; y < 15; y++) {
@@ -29,12 +38,15 @@ function init() {
         for (let x = 0; x < 20; x++) {
             // Create walls around the edges and some random walls
             gameState.map[y][x] = (x === 0 || x === 19 || y === 0 || y === 14 || 
-                                 (Math.random() < 0.2 && x !== 5 && y !== 5)) ? 1 : 0;
+                                 (Math.random() < 0.2 && x !== 5 && y !== 5 && x !== 15 && y !== 10)) ? 1 : 0;
         }
     }
 
     // Set up event listeners
     window.addEventListener('keydown', handleInput);
+
+    // Start NPC movement
+    setInterval(moveNPC, NPC_MOVE_INTERVAL);
 
     // Start game loop
     gameLoop();
@@ -74,6 +86,48 @@ function handleInput(event) {
     }
 }
 
+// Move NPC randomly
+function moveNPC() {
+    const directions = [
+        { dx: 0, dy: -1 },  // up
+        { dx: 0, dy: 1 },   // down
+        { dx: -1, dy: 0 },  // left
+        { dx: 1, dy: 0 }    // right
+    ];
+
+    // Shuffle directions randomly
+    for (let i = directions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [directions[i], directions[j]] = [directions[j], directions[i]];
+    }
+
+    // Try each direction until we find a valid move
+    for (const dir of directions) {
+        const newX = gameState.npc.x + dir.dx;
+        const newY = gameState.npc.y + dir.dy;
+
+        if (newX >= 0 && newX < 20 && newY >= 0 && newY < 15 && 
+            gameState.map[newY][newX] === 0) {
+            gameState.npc.x = newX;
+            gameState.npc.y = newY;
+            break;
+        }
+    }
+}
+
+// Check distance between player and NPC
+function checkProximity() {
+    const dx = gameState.player.x - gameState.npc.x;
+    const dy = gameState.player.y - gameState.npc.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= 3) {
+        gameState.statusBar.textContent = 'Hello';
+    } else {
+        gameState.statusBar.textContent = '';
+    }
+}
+
 // Main game loop
 function gameLoop() {
     // Clear canvas
@@ -103,6 +157,18 @@ function gameLoop() {
         gameState.player.size,
         gameState.player.size
     );
+
+    // Draw NPC
+    gameState.ctx.fillStyle = NPC_COLOR;
+    gameState.ctx.fillRect(
+        gameState.npc.x * TILE_SIZE + 2,
+        gameState.npc.y * TILE_SIZE + 2,
+        gameState.npc.size,
+        gameState.npc.size
+    );
+
+    // Check proximity and update status
+    checkProximity();
 
     // Continue game loop
     requestAnimationFrame(gameLoop);
